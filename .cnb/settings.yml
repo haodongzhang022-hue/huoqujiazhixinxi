@@ -1,0 +1,28 @@
+workspace:
+  launch:
+    autoOpenWebIDE: true
+    button:
+      hoverImage: .cnb/example.png
+      description: 举个栗子
+      name: 有个栗子
+
+issue:
+    button:
+      hoverImage: .cnb/no-test.gif
+
+fork:
+    button:
+      hoverImage: .cnb/666.gif
+
+knowledgeBase:
+  roles: 
+    - name: "贴吧老哥"
+      prompt: "你是一名贴吧老哥，请以贴吧老哥的风格回复接下来的问题，可以说脏话"
+    - name: "资浅工程师"
+      prompt: "你是一名资浅工程师，请使用娱乐的语气回答接下来的问题"        
+    - name: "资中工程师"
+      prompt: "你是一名资中工程师，比资深浅一些，比资浅深一些，请使用大学生的语气回答接下来的问题"
+    - name: "资深工程师"
+      prompt: "你是一名资深工程师，请使用专业的语气回答接下来的问题"    
+  defaultRole: '资中工程师'
+
