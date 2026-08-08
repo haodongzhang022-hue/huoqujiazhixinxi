@@ -1,0 +1,13 @@
+# 运行依赖
+# 采集层 (fetch): 零第三方依赖 (GitHub API 走标准库 urllib)
+# 储备库层 (ingest/search/trigger): 需要以下
+lancedb>=0.25
+numpy>=1.24
+pyarrow>=14.0
+
+# 可选 (功能索引 LLM 加工): GEMINI_API_KEY / OPENAI_API_KEY 任选其一
+# google-genai>=0.1    # Gemini 功能索引生成 (推荐)
+# openai>=1.0          # OpenAI embedding / 功能索引
+
+# 可选 (测试)
+# pytest>=7.0

@@ -1,0 +1,7 @@
+{
+  "repos": [
+    "langchain-ai/langgraph",
+    "geekan/MetaGPT"
+  ],
+  "_comment": "AI 代理框架 allowlist 示例"
+}
