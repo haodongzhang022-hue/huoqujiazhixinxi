@@ -107,6 +107,16 @@ class ReserveAPI(BaseHTTPRequestHandler):
             if status:
                 q = [e for e in q if e.get("status") == status]
             return self._send(200, {"count": len(q), "items": q})
+        if path == "/api/v1/reserve/cluster":
+            from reserve.cluster import cluster_by_tags, kmeans, load_repos as cluster_load_repos
+            mode = qs.get("mode", "by-tags")
+            limit = int(qs.get("limit", 5000))
+            repos = cluster_load_repos(limit=limit)
+            if mode == "kmeans":
+                result = kmeans(repos, k=int(qs.get("k", 6)))
+            else:
+                result = cluster_by_tags(repos)
+            return self._send(200, result)
         return self._send(404, {"error": f"no route: {path}"})
 
     def do_POST(self):

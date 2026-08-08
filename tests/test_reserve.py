@@ -326,6 +326,64 @@ def test_review_no_provider_goes_queue():
     review_mod.QUEUE_PATH = Path(__file__).resolve().parent.parent / "config" / "review_queue.json"
 
 
+# ---------- 能力聚类 (cluster) ----------
+
+def test_cluster_by_tags():
+    from reserve.cluster import cluster_by_tags
+    repos = [
+        make_repo("a/rag1", desc="rag engine", tags=["rag", "vector"]),
+        make_repo("b/rag2", desc="another rag", tags=["rag"]),
+        make_repo("c/mcp1", desc="mcp server", tags=["mcp"]),
+    ]
+    from reserve.classifier import classify
+    repos = [classify(r) for r in repos]
+    result = cluster_by_tags(repos)
+    assert result["mode"] == "by-tags"
+    assert result["summary"]["total_repos"] == 3
+    tags = [c["tag"] for c in result["clusters"]]
+    assert any("RAG" in t for t in tags)
+
+
+def test_cluster_kmeans():
+    from reserve.cluster import kmeans
+    from reserve.classifier import classify
+    repos = [classify(make_repo(f"km/r{i}", desc=d, tags=t))
+             for i, (d, t) in enumerate([
+                 ("rag vector search engine", ["rag"]),
+                 ("rag knowledge base", ["rag", "kb"]),
+                 ("mcp server tool", ["mcp"]),
+                 ("mcp agent framework", ["mcp", "agent"]),
+                 ("game engine", ["game"]),
+             ])]
+    result = kmeans(repos, k=3)
+    assert result["mode"] == "kmeans"
+    assert result["summary"]["total_repos"] == 5
+    assert len(result["clusters"]) >= 1
+
+
+# ---------- numpy 清洗 (store 读回) ----------
+
+def test_store_rows_to_dicts_numpy_clean():
+    """LanceDB 读回的行应把 numpy array/标量转回原生类型 (下游 if not tags / json 不炸)。"""
+    import tempfile as _tf
+    from reserve.store import ReserveStore
+    from reserve.classifier import classify
+    from reserve.embedding import embed_repo
+    s = ReserveStore(str(Path(_tf.mkdtemp(prefix="np-clean-"))))
+    repo = classify(make_repo("np/clean", desc="mcp server", tags=["mcp"]))
+    repo["embedding"] = embed_repo(repo)
+    s.upsert_repos([repo])
+    rows = s.all_repos()
+    assert len(rows) == 1
+    r = rows[0]
+    # numpy ndarray 已被清洗为 list
+    assert isinstance(r.get("function_tags"), list)
+    assert isinstance(r.get("embedding"), list)
+    assert isinstance(r.get("stars"), int)
+    # 布尔/数值可安全使用
+    assert not r.get("archived") or isinstance(r.get("archived"), bool)
+
+
 # ---------- main ----------
 
 def main():

@@ -131,17 +131,18 @@ pipeline/
     └── needs.json     pending_needs (可选)
 
 reserve/
-├── store.py           LanceDB 存储层 (repo_reserve / repo_snapshots / needs)
+├── store.py           LanceDB 存储层 (repo_reserve / repo_snapshots / needs, 动态向量维度)
 ├── preprocessor.py    归一化 + 去重
 ├── classifier.py      打分三分类 + 功能索引 (LLM/启发式)
-├── embedding.py       向量化 (本地中英桥接 / API)
+├── embedding.py       向量化 (本地中英桥接 / OpenAI 兼容 / Ollama API)
 ├── llm.py             LLM Provider 抽象层 (OpenAI 兼容 API / 本地 Ollama / 自定义端点)
 ├── enrich.py          LLM 功能索引生成 (读 README/发布者介绍 → 高质量索引)
 ├── review.py          LLM 代码审核 (action 候选四维评审) + 人工审核队列
+├── cluster.py         能力聚类 (按功能标签 / 向量 K-means, 能力簇视图)
 ├── ingest.py          fetch→classify→LLM增强→LLM审核→embed→入库 端到端管道
 ├── search.py          全文/向量/混合检索
 ├── trigger.py         条件触发引擎 + needs 双向生长回路
-└── api.py             REST API (含 /api/v1/llm/status + /api/v1/review/*)
+└── api.py             REST API (含 /api/v1/llm/status + /api/v1/review/* + /api/v1/reserve/cluster)
 
 config/
 ├── reserve_rules.json 条件判断规则 (热更新)
@@ -149,7 +150,7 @@ config/
 └── llm.json.example   配置模板
 
 tests/
-└── test_reserve.py    单元测试 (18 项, 无需 pytest)
+└── test_reserve.py    单元测试 (21 项, 无需 pytest)
 
 .github/workflows/
 └── daily-fetch.yml    每日 08:00 定时采集+入库+重匹配
@@ -158,7 +159,7 @@ tests/
 ## 测试
 
 ```bash
-python tests/test_reserve.py    # 18/18 通过
+python tests/test_reserve.py    # 21/21 通过
 ```
 
 ## LLM 接入（自定义 API / 本地大模型）
@@ -250,6 +251,23 @@ python -m reserve.review review 快照.classified.json   # 审核 action 候选
 python -m reserve.review queue                          # 查看队列
 ```
 
+## 能力聚类（cluster）
+
+对储备库做「聚类分类 + 列出功能 + 调用时机」的能力簇视图（对齐 Issue 需求）：
+
+```bash
+# 按功能标签聚类 -> 能力簇索引 (标签/项目/总星数/功能摘要)
+python -m reserve.cluster --by-tags
+# 向量语义聚类 (纯 Python K-means, 无需 sklearn)
+python -m reserve.cluster --kmeans --k 6
+# 对未入库的快照先分类再聚类
+python -m reserve.cluster --snapshot pipeline/data/snapshots/YYYY-MM-DD.json
+# JSON 输出 (供上层应用消费)
+python -m reserve.cluster --kmeans --json
+```
+
+REST API: `GET /api/v1/reserve/cluster?mode=by-tags|kmeans&k=6`
+
 ## 环境变量
 
 | 变量 | 说明 |
@@ -258,7 +276,8 @@ python -m reserve.review queue                          # 查看队列
 | `LANCE_DIR` / `LANCEDB_URI` | LanceDB 存储位置 (默认 `./reserve_data`) |
 | `RESERVE_TABLE` / `SNAPSHOT_TABLE` | 自定义表名 |
 | `LLM_*` / `OLLAMA_*` | LLM 接入配置 (见上表) |
-| `EMBEDDING_API_KEY` / `EMBEDDING_API_URL` | API embedding (可选, 更强) |
+| `EMBEDDING_API_KEY` / `EMBEDDING_API_URL` / `EMBEDDING_MODEL` | API embedding (可选, 更强) |
+| `RESERVE_EMBED_DIM` | 储备库向量维度 (默认自动跟随 embedding 模型推断) |
 | `PIPELINE_NEEDS_FILE` | pending_needs 文件路径 (可选) |
 | `REVIEW_QUEUE` | 人工审核队列文件路径 (可选, 默认 config/review_queue.json) |
 
@@ -271,5 +290,6 @@ python -m reserve.review queue                          # 查看队列
 - [x] R6 条件触发引擎 (AUTO/SUGGEST/LOG + needs 双向生长回路)
 - [x] R7 REST API 服务 (/api/v1/reserve/* + /api/v1/needs)
 - [x] R8 LLM 接入 (自定义 API/本地 Ollama) + LLM 功能索引 + LLM 代码审核 + 人工审核队列
+- [x] R9 能力聚类 (按功能标签 / 向量 K-means, 能力簇索引视图)
 - [ ] R5 action 生态升级自动克隆注册 (候选 PR 半自动流程, 消费 review_status=approved)
 - [ ] 多源聚合 (agents-radar 适配 + 中文榜 + GH Archive 冷启动回填)

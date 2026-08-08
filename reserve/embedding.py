@@ -223,9 +223,63 @@ def _api_embed(texts: list[str]) -> list[list[float]] | None:
 
 
 def embed_batch(repos: list[dict], dim: int = EMBED_DIM) -> list[list[float]]:
-    """批量嵌入: 优先 API, 失败/无 key 回退本地。"""
+    """批量嵌入: 优先 API (OpenAI 兼容 / Ollama), 失败/无 key 回退本地。"""
     texts = [build_repo_text(r) for r in repos]
     api = _api_embed(texts)
     if api and len(api) == len(texts):
         return api
+    ollama = _ollama_embed(texts)
+    if ollama and len(ollama) == len(texts):
+        return ollama
     return [embed_text(t, dim=dim) for t in texts]
+
+
+# Ollama 不可用缓存 (避免每次 embed_batch 都等超时)
+_OLLAMA_ALIVE: bool | None = None
+
+
+def _ollama_embed(texts: list[str]) -> list[list[float]] | None:
+    """调用本地 Ollama embedding (无需 API key, 数据不出本机)。
+
+    自动读取 LLM 配置中的 OLLAMA_BASE_URL (默认 http://localhost:11434),
+    模型可用 EMBEDDING_MODEL / OLLAMA_MODEL 指定 (默认 nomic-embed-text)。
+    失败 (Ollama 未启动/无模型) -> 返回 None 由本地嵌入兑底。
+    """
+    global _OLLAMA_ALIVE
+    if _OLLAMA_ALIVE is False:
+        return None
+    try:
+        from reserve.llm import load_config
+        cfg = load_config()
+        base = (cfg.get("ollama_base_url") or "http://localhost:11434").rstrip("/")
+        model = os.environ.get("EMBEDDING_MODEL", "").strip() or cfg.get("ollama_model", "nomic-embed-text")
+    except Exception:
+        base = "http://localhost:11434"
+        model = os.environ.get("EMBEDDING_MODEL", "nomic-embed-text")
+    # 先快速探测 Ollama 是否存活 (2s 超时, 避免每次等待)
+    if _OLLAMA_ALIVE is None:
+        try:
+            req = urllib.request.Request(f"{base}/api/tags")
+            with urllib.request.urlopen(req, timeout=2) as resp:
+                _OLLAMA_ALIVE = resp.status == 200
+        except Exception:
+            _OLLAMA_ALIVE = False
+            print(f"[embedding] ollama not reachable at {base}, use local embedding")
+            return None
+    try:
+        out = []
+        for t in texts:
+            body = json.dumps({"model": model, "prompt": t}).encode("utf-8")
+            req = urllib.request.Request(f"{base}/api/embeddings", data=body, headers={
+                "Content-Type": "application/json",
+            })
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            emb = data.get("embedding")
+            if not emb:
+                return None
+            out.append([float(x) for x in emb])
+        return out
+    except Exception as e:
+        print(f"[embedding] ollama api error, fallback to local: {e}")
+        return None

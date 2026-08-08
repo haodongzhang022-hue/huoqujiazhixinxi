@@ -22,6 +22,38 @@ import pyarrow as pa
 
 DEFAULT_DIR = Path(__file__).resolve().parent.parent / "reserve_data"
 
+
+def embed_dim() -> int:
+    """储备库向量维度 (与 embedding 管道一致)。
+
+    优先级: 环境变量 RESERVE_EMBED_DIM > EMBEDDING_MODEL/API 推断 > 默认 384。
+    API embedding (如 text-embedding-3-small=1536) / Ollama (nomic-embed-text=768)
+    维度与本地 TF hash 嵌入 (384) 不同, 建表时必须用实际维度。
+    """
+    env = os.environ.get("RESERVE_EMBED_DIM", "").strip()
+    if env:
+        try:
+            return int(env)
+        except ValueError:
+            pass
+    # Ollama embedding 模型维度表
+    ollama_dims = {
+        "nomic-embed-text": 768,
+        "bge-m3": 1024,
+        "mxbai-embed-large": 1024,
+        "all-minilm": 384,
+        "snowflake-arctic-embed": 1024,
+    }
+    model = os.environ.get("EMBEDDING_MODEL", "").strip().lower()
+    if model in ollama_dims:
+        return ollama_dims[model]
+    if model.startswith("text-embedding-3"):
+        return 1536
+    if model.startswith("text-embedding-ada"):
+        return 1536
+    return 384
+
+
 # 仓库主表 schema (对齐调研报告 §5.2)
 REPO_SCHEMA = {
     "repo_id": "str",              # 唯一键 = full_name
@@ -71,7 +103,7 @@ REPO_SCHEMA = {
     "review_status": "str",    # pending / approved / rejected / none
     "reviewed_at": "str",
     "updated_at": "str",
-    "embedding": "vector[384]",
+    "embedding": f"vector[{embed_dim()}]",
 }
 
 # 全文检索的文本拼接列 (FTS 索引建在这一列)
@@ -346,7 +378,7 @@ class ReserveStore:
             df = tbl.to_pandas()
             out = []
             for _, r in df.iterrows():
-                row = r.to_dict()
+                row = row_to_dict(r.to_dict())
                 row["matched_repos"] = json.loads(row.get("matched_repos") or "[]")
                 out.append(row)
             return out
@@ -404,7 +436,12 @@ def normalize_repo_row(repo: dict) -> dict:
 
 
 def row_to_dict(row: dict) -> dict:
-    """LanceDB 读回的行 -> 对外 dict（review JSON 字符串反序列化, numpy 标量转原生类型）。"""
+    """LanceDB 读回的行 -> 对外 dict（review JSON 字符串反序列化, numpy 标量/数组转原生类型）。
+
+    LanceDB to_pandas 取回时 list 列是 numpy.ndarray、数值列是 numpy 标量,
+    下游 `if not function_tags` / json.dumps 会报错, 统一在这里清洗。
+    """
+    import numpy as np
     out = {}
     for k, v in row.items():
         if k == "review" and isinstance(v, str) and v:
@@ -412,6 +449,14 @@ def row_to_dict(row: dict) -> dict:
                 out[k] = json.loads(v)
             except Exception:
                 out[k] = v
+        elif isinstance(v, np.ndarray):
+            out[k] = v.tolist()
+        elif isinstance(v, (np.integer,)):
+            out[k] = int(v)
+        elif isinstance(v, (np.floating,)):
+            out[k] = float(v)
+        elif isinstance(v, (np.bool_,)):
+            out[k] = bool(v)
         elif isinstance(v, bytes):
             out[k] = v.decode("utf-8", errors="replace")
         else:
