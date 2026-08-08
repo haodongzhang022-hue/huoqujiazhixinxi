@@ -135,16 +135,21 @@ reserve/
 ├── preprocessor.py    归一化 + 去重
 ├── classifier.py      打分三分类 + 功能索引 (LLM/启发式)
 ├── embedding.py       向量化 (本地中英桥接 / API)
-├── ingest.py          fetch→classify→embed→入库 端到端管道
+├── llm.py             LLM Provider 抽象层 (OpenAI 兼容 API / 本地 Ollama / 自定义端点)
+├── enrich.py          LLM 功能索引生成 (读 README/发布者介绍 → 高质量索引)
+├── review.py          LLM 代码审核 (action 候选四维评审) + 人工审核队列
+├── ingest.py          fetch→classify→LLM增强→LLM审核→embed→入库 端到端管道
 ├── search.py          全文/向量/混合检索
 ├── trigger.py         条件触发引擎 + needs 双向生长回路
-└── api.py             REST API 服务
+└── api.py             REST API (含 /api/v1/llm/status + /api/v1/review/*)
 
 config/
-└── reserve_rules.json 条件判断规则 (热更新)
+├── reserve_rules.json 条件判断规则 (热更新)
+├── llm.json           自定义 LLM 配置 (API/本地模型, 不入库)
+└── llm.json.example   配置模板
 
 tests/
-└── test_reserve.py    单元测试 (11 项, 无需 pytest)
+└── test_reserve.py    单元测试 (18 项, 无需 pytest)
 
 .github/workflows/
 └── daily-fetch.yml    每日 08:00 定时采集+入库+重匹配
@@ -153,7 +158,96 @@ tests/
 ## 测试
 
 ```bash
-python tests/test_reserve.py    # 11/11 通过
+python tests/test_reserve.py    # 18/18 通过
+```
+
+## LLM 接入（自定义 API / 本地大模型）
+
+> 功能索引高质量生成、读 README/发布者介绍、代码审核——都需要大模型。
+> 本仓库已内置 **LLM Provider 抽象层**（`reserve/llm.py`, 零第三方依赖, 标准库 urllib 直连），
+> 支持接入**任意 OpenAI 兼容 API** 或**本地 Ollama**，也支持人工 `@CodeBuddy` 审核队列。
+
+### 方式一：OpenAI 兼容 API（任意自定义端点）
+
+适用于 OpenAI / DeepSeek / Moonshot Kimi / 通义千问 / OneAPI 网关 / vLLM / LM Studio……
+只要实现 `POST {base_url}/chat/completions` 即插即用：
+
+```bash
+# 环境变量方式
+LLM_BASE_URL=https://api.deepseek.com/v1 \
+LLM_API_KEY=sk-xxx \
+LLM_MODEL=deepseek-chat \
+python -m reserve.ingest
+
+# 或写入 config/llm.json（推荐, 持久化）
+# { "provider": "openai", "base_url": "https://api.deepseek.com/v1",
+#   "api_key": "sk-xxx", "model": "deepseek-chat" }
+```
+
+### 方式二：本地 Ollama（完全离线）
+
+```bash
+# 先拉模型: ollama pull qwen2.5:7b
+OLLAMA_BASE_URL=http://localhost:11434 \
+OLLAMA_MODEL=qwen2.5:7b \
+python -m reserve.ingest
+```
+
+### 方式三：人工 / @CodeBuddy 审核队列（不配 LLM 也能用）
+
+未配置 LLM 时, action 候选自动进入 `config/review_queue.json` 人工审核队列,
+可随时在本仓库 `@CodeBuddy` 召唤 NPC 审核: 人工确认后 `review_status=approved` 才进入生态升级。
+
+```bash
+python -m reserve.review queue            # 查看审核队列
+python -m reserve.review update owner/repo approved --note "人工通过"  # 确认/拒绝
+curl http://127.0.0.1:8000/api/v1/review/queue   # REST 查看
+curl -X PUT "http://127.0.0.1:8000/api/v1/review/queue/owner/repo?status=approved"
+```
+
+### LLM 配置摘要
+
+| 环境变量 | 说明 | 默认 |
+|---|---|---|
+| `LLM_PROVIDER` | auto / openai / ollama / none | auto |
+| `LLM_BASE_URL` | OpenAI 兼容端点 (含 /v1) | 空 |
+| `LLM_API_KEY` | API key (本地 vLLM/Ollama 可留空) | 空 |
+| `LLM_MODEL` | 模型名 | 空 |
+| `OLLAMA_BASE_URL` | 本地 Ollama 地址 | http://localhost:11434 |
+| `OLLAMA_MODEL` | 本地模型名 | qwen2.5:7b |
+| `LLM_TIMEOUT` | 请求超时秒数 | 90 |
+| `LLM_TEMPERATURE` | 采样温度 | 0.2 |
+
+## LLM 功能索引（enrich）
+
+读**仓库元数据 + README（发布者介绍）** → 生成四字段中文索引：
+
+- `function_tags`：功能标签（MCP / AI-Agent / RAG / LLM / 知识库 / … 白名单引导）
+- `function_summary`：一句话中文总结（解决什么问题）
+- `use_case`：适用场景（什么时候应该用它）
+- `ecosystem_fit`：与 MCP/AI-Agent/RAG/LLM 生态匹配度分析
+
+```bash
+python -m reserve.enrich 快照.json --readme     # 独立运行 (拉 README 增强)
+python -m reserve.ingest                        # 管道内自动启用 (--no-llm 关闭)
+```
+
+## LLM 代码审核（review）
+
+对 **action 候选（生态升级）** 仓库做四维 LLM 评审：
+
+1. 功能匹配（是否真的解决我们的问题）
+2. 代码质量与活跃度（维护/star 增长/文档）
+3. 许可证合规（MIT/Apache 优, GPL 提示, 无协议告警）
+4. 生态适配（接入 MCP/AI-Agent/RAG/LLM 难度与依赖风险）
+
+输出 `verdict: approve / condition / reject / manual` + `score 0-10` + `risks` + `recommendation`，
+结果持久化到 LanceDB（`review` / `review_status` 字段）并进入人工审核队列，
+人工/`@CodeBuddy` 确认后才算生态升级通过。
+
+```bash
+python -m reserve.review review 快照.classified.json   # 审核 action 候选
+python -m reserve.review queue                          # 查看队列
 ```
 
 ## 环境变量
@@ -163,10 +257,12 @@ python tests/test_reserve.py    # 11/11 通过
 | `GITHUB_TOKEN` | GitHub API token (有则 5000 req/hr, 无则匿名 60 req/hr) |
 | `LANCE_DIR` / `LANCEDB_URI` | LanceDB 存储位置 (默认 `./reserve_data`) |
 | `RESERVE_TABLE` / `SNAPSHOT_TABLE` | 自定义表名 |
-| `GEMINI_API_KEY` / `OPENAI_API_KEY` | LLM 功能索引 / API embedding (可选) |
+| `LLM_*` / `OLLAMA_*` | LLM 接入配置 (见上表) |
+| `EMBEDDING_API_KEY` / `EMBEDDING_API_URL` | API embedding (可选, 更强) |
 | `PIPELINE_NEEDS_FILE` | pending_needs 文件路径 (可选) |
+| `REVIEW_QUEUE` | 人工审核队列文件路径 (可选, 默认 config/review_queue.json) |
 
-## 路线图 (R1-R7)
+## 路线图 (R1-R8)
 
 - [x] R1 储备库骨架 (LanceDB repo_reserve 表 + 条件判断字段)
 - [x] R2 fetch 采集层 (wvb-cc-radar 模型改造, 本仓库)
@@ -174,6 +270,6 @@ python tests/test_reserve.py    # 11/11 通过
 - [x] R4 定时调度 (GitHub Actions daily-fetch.yml)
 - [x] R6 条件触发引擎 (AUTO/SUGGEST/LOG + needs 双向生长回路)
 - [x] R7 REST API 服务 (/api/v1/reserve/* + /api/v1/needs)
-- [ ] R5 action 生态升级自动克隆注册 (候选 PR 半自动流程)
-- [ ] LLM 功能索引接入 (function_tags/summary/use_case 高质量生成)
+- [x] R8 LLM 接入 (自定义 API/本地 Ollama) + LLM 功能索引 + LLM 代码审核 + 人工审核队列
+- [ ] R5 action 生态升级自动克隆注册 (候选 PR 半自动流程, 消费 review_status=approved)
 - [ ] 多源聚合 (agents-radar 适配 + 中文榜 + GH Archive 冷启动回填)

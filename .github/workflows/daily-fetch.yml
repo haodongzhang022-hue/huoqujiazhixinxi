@@ -38,9 +38,15 @@ jobs:
             python -m pipeline.fetch
           fi
 
-      - name: 入库 (归一化 -> 去重 -> 分类 -> 向量化 -> LanceDB)
+      - name: 入库 (归一化 -> 去重 -> 分类 -> LLM增强/审核 -> 向量化 -> LanceDB)
+        env:
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL }}
+          OLLAMA_BASE_URL: ${{ secrets.OLLAMA_BASE_URL }}
+          OLLAMA_MODEL: ${{ secrets.OLLAMA_MODEL }}
         run: |
-          python -m reserve.ingest
+          python -m reserve.ingest --no-readme || python -m reserve.ingest --no-readme --no-llm --no-review
 
       - name: 条件触发重匹配 (pending_needs 双向生长回路)
         run: |

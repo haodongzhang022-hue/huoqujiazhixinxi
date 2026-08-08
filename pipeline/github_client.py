@@ -94,6 +94,38 @@ def search_repos(query: str, per_page: int) -> tuple[list[dict], dict]:
     return data.get("items", []), hdrs
 
 
+def get_readme(full_name: str, max_chars: int = 12000) -> str | None:
+    """获取仓库 README 文本 (用于 LLM 功能索引/代码审核)。
+
+    走 /repos/{owner}/{name}/readme (accept: application/vnd.github.raw) 直接拿原文,
+    失败时回退 base64 JSON 解码。超长截断到 max_chars 以控制 LLM 输入。
+    返回 None 表示无 README (空仓库/已删)。
+    """
+    url = f"{GITHUB_API}/repos/{full_name}/readme"
+    req = urllib.request.Request(url, headers=_headers())
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            raw = resp.read().decode("utf-8", errors="replace")
+            # raw 端点直接返回文本; 若拿到的是 JSON (老接口兜底) 则解码 content
+            if raw.lstrip().startswith("{"):
+                try:
+                    data = json.loads(raw)
+                    import base64
+                    raw = base64.b64decode(data.get("content", "")).decode("utf-8", errors="replace")
+                except Exception:
+                    pass
+            return raw[:max_chars] if raw else None
+    except urllib.error.HTTPError as e:
+        if e.code in (404, 422):
+            print(f"[gh] readme not found {full_name} (HTTP {e.code})", file=__import__("sys").stderr)
+            return None
+        print(f"[gh] readme error {full_name}: HTTP {e.code}", file=__import__("sys").stderr)
+        return None
+    except Exception as e:
+        print(f"[gh] readme error {full_name}: {e}", file=__import__("sys").stderr)
+        return None
+
+
 def get_repo_direct(full_name: str) -> tuple[dict | None, dict]:
     """/repos/{owner}/{name} 直连。404 返回 (None, {}) 以便 allowlist 静默跳过。"""
     url = f"{GITHUB_API}/repos/{full_name}"

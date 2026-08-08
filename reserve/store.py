@@ -64,6 +64,12 @@ REPO_SCHEMA = {
     "matched_need_ids": "list[str]",
     "needs_rematch_ts": "str",
     "is_secondary": "bool",
+    # LLM 增强字段
+    "index_source": "str",     # heuristic / llm
+    "indexed_at": "str",
+    "review": "str",           # LLM 审核结果 (JSON 字符串)
+    "review_status": "str",    # pending / approved / rejected / none
+    "reviewed_at": "str",
     "updated_at": "str",
     "embedding": "vector[384]",
 }
@@ -195,7 +201,7 @@ class ReserveStore:
             res = self._open_repos().search().where(f"repo_id = '{_esc(full_name)}'", prefilter=True).limit(1).to_pandas()
             if len(res) == 0:
                 return None
-            return res.iloc[0].to_dict()
+            return row_to_dict(res.iloc[0].to_dict())
         except Exception:
             return None
 
@@ -215,7 +221,7 @@ class ReserveStore:
             df = q.limit(limit).to_pandas()
             if columns:
                 df = df[columns]
-            return df.to_dict("records")
+            return rows_to_dicts(df.to_dict("records"))
         except Exception as e:
             print(f"[store] query error: {e}")
             return []
@@ -228,7 +234,7 @@ class ReserveStore:
 
     def all_repos(self, limit: int = 10000) -> list[dict]:
         try:
-            return self._open_repos().to_pandas().head(limit).to_dict("records")
+            return rows_to_dicts(self._open_repos().to_pandas().head(limit).to_dict("records"))
         except Exception:
             return []
 
@@ -249,7 +255,7 @@ class ReserveStore:
             q = tbl.search(text, query_type="fts")
             if where:
                 q = q.where(where, prefilter=True)
-            return q.limit(limit).to_pandas().to_dict("records")
+            return rows_to_dicts(q.limit(limit).to_pandas().to_dict("records"))
         except Exception as e:
             print(f"[store] fts error: {e}")
             return []
@@ -260,7 +266,7 @@ class ReserveStore:
             q = tbl.search(embedding)
             if where:
                 q = q.where(where, prefilter=True)
-            return q.limit(limit).to_pandas().to_dict("records")
+            return rows_to_dicts(q.limit(limit).to_pandas().to_dict("records"))
         except Exception as e:
             print(f"[store] vector error: {e}")
             return []
@@ -358,6 +364,8 @@ def normalize_repo_row(repo: dict) -> dict:
         val = repo.get(key)
         if key == "repo_id" and not val:
             val = repo.get("full_name")
+        if key == "review" and isinstance(val, dict):
+            val = json.dumps(val, ensure_ascii=False)  # dict -> JSON 字符串持久化
         if val is None:
             row[key] = _placeholder_default(key, typ)
         elif typ.startswith("vector"):
@@ -393,6 +401,26 @@ def normalize_repo_row(repo: dict) -> dict:
     ])).lower()
     row["updated_at"] = now_iso()
     return row
+
+
+def row_to_dict(row: dict) -> dict:
+    """LanceDB 读回的行 -> 对外 dict（review JSON 字符串反序列化, numpy 标量转原生类型）。"""
+    out = {}
+    for k, v in row.items():
+        if k == "review" and isinstance(v, str) and v:
+            try:
+                out[k] = json.loads(v)
+            except Exception:
+                out[k] = v
+        elif isinstance(v, bytes):
+            out[k] = v.decode("utf-8", errors="replace")
+        else:
+            out[k] = v
+    return out
+
+
+def rows_to_dicts(rows: list[dict]) -> list[dict]:
+    return [row_to_dict(r) for r in rows]
 
 
 def _esc(s: str) -> str:

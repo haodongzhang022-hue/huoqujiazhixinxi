@@ -162,10 +162,27 @@ def llm_function_index(repo: dict, client=None) -> dict | None:
     """LLM 功能索引 (有 provider 时启用, 无则返回 None 由启发式兜底)。
 
     client: 可选回调 fn(repo) -> {function_tags, function_summary, use_case, ecosystem_fit}
-    未来可接 openai / google-genai / deepseek。
+    默认使用 reserve.llm.get_provider() 的 OpenAI 兼容 / 本地 Ollama 接入。
     """
     if client is None:
-        return None
+        try:
+            from reserve.enrich import enrich_one
+            from reserve.llm import get_provider
+            provider = get_provider()
+            if provider is None:
+                return None
+            out = enrich_one(repo, provider=provider, use_cache=False)
+            if out.get("index_source") != "llm":
+                return None
+            return {
+                "function_tags": out.get("function_tags"),
+                "function_summary": out.get("function_summary"),
+                "use_case": out.get("use_case"),
+                "ecosystem_fit": out.get("ecosystem_fit"),
+            }
+        except Exception as e:
+            print(f"[classifier] llm index error: {e}")
+            return None
     try:
         return client(repo)
     except Exception as e:

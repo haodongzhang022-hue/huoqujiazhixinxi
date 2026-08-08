@@ -17,3 +17,9 @@ pipeline/data/needs/*.json
 
 # 环境
 .env
+
+# LLM 密钥配置 (不入库; 模板 llm.json.example 保留)
+config/llm.json
+
+# 人工审核队列 (运行时生成, 不入库)
+config/review_queue.json

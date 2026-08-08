@@ -29,6 +29,8 @@ from reserve.classifier import classify_batch, load_rules
 from reserve.embedding import embed_batch
 from reserve.search import search
 from reserve.trigger import trigger, rematch_pending_needs
+from reserve.llm import get_provider, describe_config, load_config
+from reserve.review import review_action_candidates, queue_list, queue_update
 
 
 class ReserveAPI(BaseHTTPRequestHandler):
@@ -70,7 +72,8 @@ class ReserveAPI(BaseHTTPRequestHandler):
             rows = self.store.query(where=where, limit=limit)
             return self._send(200, {"count": len(rows), "items": rows})
         if path.startswith("/api/v1/reserve/repos/"):
-            name = path.rsplit("/", 1)[-1]
+            from urllib.parse import unquote
+            name = qs.get("name") or unquote(path.rsplit("/", 1)[-1])
             repo = self.store.get_repo(name)
             if repo is None:
                 return self._send(404, {"error": "not found"})
@@ -87,6 +90,23 @@ class ReserveAPI(BaseHTTPRequestHandler):
         if path == "/api/v1/health":
             return self._send(200, {"status": "ok", "reserve_count": self.store.count(),
                                     "tables": self.store.list_tables()})
+        if path == "/api/v1/llm/status":
+            p = get_provider()
+            cfg = load_config()
+            return self._send(200, {
+                "configured": p is not None,
+                "provider": str(p) if p else None,
+                "description": describe_config(),
+                "config": {k: v for k, v in cfg.items() if k != "api_key"},
+                "enrich_enabled": cfg.get("enrich_enabled", True),
+                "review_enabled": cfg.get("review_enabled", True),
+            })
+        if path == "/api/v1/review/queue":
+            q = queue_list()
+            status = qs.get("status")
+            if status:
+                q = [e for e in q if e.get("status") == status]
+            return self._send(200, {"count": len(q), "items": q})
         return self._send(404, {"error": f"no route: {path}"})
 
     def do_POST(self):
@@ -99,10 +119,25 @@ class ReserveAPI(BaseHTTPRequestHandler):
             normalized = [normalize_repo(r) for r in repos if r.get("full_name") or r.get("repo_id")]
             dedup = dedupe(normalized, self.store)
             classified = classify_batch(dedup["new"], self.rules)
+
+            # LLM 功能索引增强 (读 README -> function_tags/summary/use_case)
+            if data.get("llm_enrich", True):
+                from reserve.enrich import enrich_repos
+                enrich_repos(classified, fetch_readme=bool(data.get("fetch_readme", False)))
+
+            # LLM 代码审核 (action 候选 -> review + 人工审核队列, 审核结果随行入库)
+            if data.get("llm_review", True):
+                from reserve.review import review_action_candidates
+                try:
+                    review_action_candidates(classified, fetch_readme=bool(data.get("fetch_readme", False)))
+                except Exception as e:
+                    print(f"[api] review step error: {e}")
+
             embeddings = embed_batch(classified)
             for r, emb in zip(classified, embeddings):
                 r["embedding"] = emb
             stats = self.store.upsert_repos(classified)
+
             return self._send(201, {"upsert": stats, "decisions": _count_decisions(classified)})
         if path == "/api/v1/reserve/match":
             data = self._read_json()
@@ -123,14 +158,42 @@ class ReserveAPI(BaseHTTPRequestHandler):
         if path == "/api/v1/needs/rematch":
             results = rematch_pending_needs(self.store)
             return self._send(200, {"matched": len(results), "results": results})
+        if path == "/api/v1/review/run":
+            """对 action 候选触发 LLM 代码审核 (可指定快照或直接传 repos)。"""
+            data = self._read_json()
+            repos = data.get("repos") or data.get("items") or []
+            if not repos:
+                return self._send(400, {"error": "repos required"})
+            review_action_candidates(repos, fetch_readme=bool(data.get("fetch_readme", True)))
+            return self._send(200, {"queued": len([r for r in repos if r.get("review_status")])})
         return self._send(404, {"error": f"no route: {path}"})
 
     def do_DELETE(self):
         path = self.path.split("?")[0]
-        if path.startswith("/api/v1/reserve/repos/"):
-            name = path.rsplit("/", 1)[-1]
+        qs = self._query()
+        name = qs.get("name", "")
+        if not name and path.startswith("/api/v1/reserve/repos/"):
+            from urllib.parse import unquote
+            name = unquote(path.rsplit("/", 1)[-1])
+        if name and path.startswith("/api/v1/reserve/repos"):
             ok = self.store.delete_repo(name)
             return self._send(200, {"deleted": ok, "full_name": name})
+        return self._send(404, {"error": f"no route: {path}"})
+
+    def do_PUT(self):
+        """PUT /api/v1/review/queue?name=owner/repo&status=approved|rejected — 审核队列人工确认。"""
+        qs = self._query()
+        name = qs.get("name", "")
+        if not name and self.path.startswith("/api/v1/review/queue/"):
+            # 兼容 path 形式 (URL 编码的 owner%2Frepo 或最后一段)
+            from urllib.parse import unquote
+            name = unquote(self.path.split("?")[0].rsplit("/", 1)[-1])
+        if name and self.path.split("?")[0].startswith("/api/v1/review/queue"):
+            status = qs.get("status", "approved")
+            if status not in ("approved", "rejected"):
+                return self._send(400, {"error": "status must be approved/rejected"})
+            entry = queue_update(name, status, note=qs.get("note", ""), reviewer=qs.get("reviewer", "api"))
+            return self._send(200, entry if entry else {"error": "not found"})
         return self._send(404, {"error": f"no route: {path}"})
 
     def _query(self) -> dict:
