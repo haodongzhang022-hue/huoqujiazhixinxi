@@ -1,0 +1,203 @@
+{
+  "$schema": "finance-catalog-v1",
+  "说明": "全球金融数据源注册目录 —— 每个数据源: 覆盖的数据类别/国家/交易所/品种 + 获取脚本(脚本名/类型/命令) + 调度策略 + 渐进披露级别 + 数据落地(文件/数据库表) + 状态。",
+  "version": "0.1.0",
+  "sources": [
+    {
+      "id": "akshare",
+      "name": "AKShare(中国及全球行情)",
+      "name_en": "AKShare",
+      "type": "python_lib",
+      "script": "finance/fetchers/akshare_fetcher.py",
+      "module": "finance.fetchers.akshare_fetcher",
+      "command": "python -m finance.fetchers.akshare_fetcher --instruments CN.RB --time-level 1d",
+      "coverage": {
+        "data_classes": ["stock", "futures", "commodity", "bond", "fund", "macro", "forex"],
+        "regions": ["CN", "HK", "US"],
+        "exchanges": ["SSE", "SZSE", "HKEX", "SHFE", "DCE", "CZCE", "INE", "CFETS", "SGE"],
+        "time_levels": ["1m", "5m", "15m", "30m", "1h", "1d", "1w", "1M"],
+        "trade_types": ["spot", "contract", "etf"]
+      },
+      "fetchers": [
+        {"name": "stock_hist", "desc": "A股历史行情", "inputs": ["instrument", "time_level"], "output": "ohlcv"},
+        {"name": "futures_hist", "desc": "国内期货历史行情", "inputs": ["instrument", "time_level"], "output": "ohlcv"},
+        {"name": "fund_netvalue", "desc": "基金净值", "inputs": ["instrument"], "output": "net_value"},
+        {"name": "macro_cn", "desc": "中国宏观指标", "inputs": [], "output": "macro_series"}
+      ],
+      "schedule": {"default_frequency": "1d", "default_cron": "0 16 * * 1-5", "note": "交易日收盘后"},
+      "disclosure": {"index": true, "meta": true, "full": true},
+      "storage": {"kind": "file", "path": "finance/data/cache/{source}/{instrument}_{time_level}.json"},
+      "status": "demo",
+      "requires": {"pip": ["akshare", "pandas"], "note": "pip install akshare"}
+    },
+    {
+      "id": "yfinance",
+      "name": "Yahoo Finance(全球股票/ETF/外汇/期货)",
+      "name_en": "Yahoo Finance",
+      "type": "python_lib",
+      "script": "finance/fetchers/yfinance_fetcher.py",
+      "module": "finance.fetchers.yfinance_fetcher",
+      "command": "python -m finance.fetchers.yfinance_fetcher --instruments US.AAPL --time-level 1d",
+      "coverage": {
+        "data_classes": ["stock", "fund", "forex", "futures", "commodity"],
+        "regions": ["US", "HK", "JP", "KR", "UK", "EU", "SG"],
+        "exchanges": ["NASDAQ", "NYSE", "HKEX", "TSE", "KRX", "LSE", "FSE", "EURONEXT", "SGX"],
+        "time_levels": ["1m", "5m", "15m", "30m", "1h", "1d", "1w", "1M"],
+        "trade_types": ["spot", "etf", "contract"]
+      },
+      "fetchers": [
+        {"name": "stock_hist", "desc": "全球股票/ETF历史行情", "inputs": ["instrument", "time_level"], "output": "ohlcv"},
+        {"name": "fx_hist", "desc": "外汇历史", "inputs": ["instrument", "time_level"], "output": "ohlcv"},
+        {"name": "fundamental", "desc": "基本面摘要", "inputs": ["instrument"], "output": "fundamentals"}
+      ],
+      "schedule": {"default_frequency": "1d", "default_cron": "0 17 * * 1-5"},
+      "disclosure": {"index": true, "meta": true, "full": true},
+      "storage": {"kind": "file", "path": "finance/data/cache/{source}/{instrument}_{time_level}.json"},
+      "status": "demo",
+      "requires": {"pip": ["yfinance", "pandas"], "note": "pip install yfinance"}
+    },
+    {
+      "id": "ccxt",
+      "name": "CCXT(加密货币交易所聚合)",
+      "name_en": "CCXT",
+      "type": "python_lib",
+      "script": "finance/fetchers/ccxt_fetcher.py",
+      "module": "finance.fetchers.ccxt_fetcher",
+      "command": "python -m finance.fetchers.ccxt_fetcher --instruments CRYPTO.BTC --time-level 1d --trade-type spot",
+      "coverage": {
+        "data_classes": ["crypto"],
+        "regions": ["GLOBAL", "KR", "US"],
+        "exchanges": ["BINANCE", "OKX", "BYBIT", "COINBASE", "UPBIT"],
+        "time_levels": ["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"],
+        "trade_types": ["spot", "contract", "perpetual", "option"]
+      },
+      "fetchers": [
+        {"name": "ohlcv", "desc": "K线(现货/合约/永续)", "inputs": ["instrument", "time_level", "trade_type"], "output": "ohlcv"},
+        {"name": "ticker", "desc": "实时行情快照", "inputs": ["instrument"], "output": "ticker"},
+        {"name": "orderbook", "desc": "盘口深度", "inputs": ["instrument"], "output": "orderbook"}
+      ],
+      "schedule": {"default_frequency": "5m", "default_cron": "*/5 * * * *"},
+      "disclosure": {"index": true, "meta": true, "full": true},
+      "storage": {"kind": "file", "path": "finance/data/cache/{source}/{instrument}_{time_level}_{trade_type}.json"},
+      "status": "demo",
+      "requires": {"pip": ["ccxt"], "note": "pip install ccxt"}
+    },
+    {
+      "id": "fred",
+      "name": "FRED(美联储经济数据库)",
+      "name_en": "FRED (St. Louis Fed)",
+      "type": "http_api",
+      "script": "finance/fetchers/fred_fetcher.py",
+      "module": "finance.fetchers.fred_fetcher",
+      "command": "python -m finance.fetchers.fred_fetcher --instruments MACRO.US.CPI --time-level 1M",
+      "coverage": {
+        "data_classes": ["macro", "bond"],
+        "regions": ["US", "GLOBAL"],
+        "exchanges": ["FRED", "FED", "BLS"],
+        "time_levels": ["1d", "1w", "1M", "1Q", "1Y"],
+        "trade_types": ["indices"]
+      },
+      "fetchers": [
+        {"name": "series", "desc": "宏观序列", "inputs": ["instrument", "time_level"], "output": "series"},
+        {"name": "calendar", "desc": "发布日历", "inputs": [], "output": "calendar"}
+      ],
+      "schedule": {"default_frequency": "1d", "default_cron": "0 6 * * *"},
+      "disclosure": {"index": true, "meta": true, "full": true},
+      "storage": {"kind": "file", "path": "finance/data/cache/{source}/{instrument}.json"},
+      "status": "demo",
+      "requires": {"env": ["FRED_API_KEY"], "note": "免费注册 https://fred.stlouisfed.org/docs/api/api_key.html"}
+    },
+    {
+      "id": "finnhub",
+      "name": "Finnhub(全球行情+新闻+情绪)",
+      "name_en": "Finnhub",
+      "type": "http_api",
+      "script": "finance/fetchers/finnhub_fetcher.py",
+      "module": "finance.fetchers.finnhub_fetcher",
+      "command": "python -m finance.fetchers.finnhub_fetcher --instruments SENTIMENT.GLOBAL.NEWS --time-level 1d",
+      "coverage": {
+        "data_classes": ["sentiment", "stock", "forex", "crypto"],
+        "regions": ["GLOBAL", "US", "CN", "EU"],
+        "exchanges": ["FINNHUB", "NASDAQ", "NYSE"],
+        "time_levels": ["1m", "5m", "1d"],
+        "trade_types": ["indices", "spot"]
+      },
+      "fetchers": [
+        {"name": "news", "desc": "财经新闻流", "inputs": [], "output": "news"},
+        {"name": "company_news", "desc": "个股新闻", "inputs": ["instrument"], "output": "news"},
+        {"name": "quote", "desc": "实时报价", "inputs": ["instrument"], "output": "quote"}
+      ],
+      "schedule": {"default_frequency": "30m", "default_cron": "*/30 * * * *"},
+      "disclosure": {"index": true, "meta": true, "full": true},
+      "storage": {"kind": "file", "path": "finance/data/cache/{source}/{instrument}.json"},
+      "status": "demo",
+      "requires": {"env": ["FINNHUB_API_KEY"], "note": "免费注册 https://finnhub.io"}
+    },
+    {
+      "id": "rss_news",
+      "name": "RSS 聚合(财经舆论)",
+      "name_en": "RSS News Aggregator",
+      "type": "rss",
+      "script": "finance/fetchers/rss_fetcher.py",
+      "module": "finance.fetchers.rss_fetcher",
+      "command": "python -m finance.fetchers.rss_fetcher --instruments SENTIMENT.CN.NEWS --time-level 1d",
+      "coverage": {
+        "data_classes": ["sentiment"],
+        "regions": ["CN", "US", "HK", "EU", "GLOBAL"],
+        "exchanges": ["XINHUA", "EASTMONEY", "REUTERS", "CNBC"],
+        "time_levels": ["1m", "1h", "1d"],
+        "trade_types": ["indices"]
+      },
+      "fetchers": [
+        {"name": "fetch_feeds", "desc": "抓取RSS源", "inputs": ["instrument"], "output": "news"}
+      ],
+      "schedule": {"default_frequency": "30m", "default_cron": "*/30 * * * *"},
+      "disclosure": {"index": true, "meta": true, "full": true},
+      "storage": {"kind": "file", "path": "finance/data/cache/{source}/{instrument}.json"},
+      "status": "demo",
+      "requires": {"pip": ["feedparser"], "note": "pip install feedparser"}
+    },
+    {
+      "id": "alpha_vantage",
+      "name": "Alpha Vantage(全球股票/外汇/宏观)",
+      "name_en": "Alpha Vantage",
+      "type": "http_api",
+      "script": "finance/fetchers/alpha_vantage_fetcher.py",
+      "module": "finance.fetchers.alpha_vantage_fetcher",
+      "command": "python -m finance.fetchers.alpha_vantage_fetcher --instruments US.AAPL --time-level 1d",
+      "coverage": {
+        "data_classes": ["stock", "forex", "macro", "crypto"],
+        "regions": ["US", "GLOBAL"],
+        "exchanges": ["NASDAQ", "NYSE"],
+        "time_levels": ["1m", "5m", "15m", "30m", "1h", "1d"],
+        "trade_types": ["spot", "etf"]
+      },
+      "fetchers": [
+        {"name": "time_series", "desc": "时间序列", "inputs": ["instrument", "time_level"], "output": "ohlcv"}
+      ],
+      "schedule": {"default_frequency": "1d", "default_cron": "0 16 * * 1-5"},
+      "disclosure": {"index": true, "meta": true, "full": true},
+      "storage": {"kind": "file", "path": "finance/data/cache/{source}/{instrument}_{time_level}.json"},
+      "status": "demo",
+      "requires": {"env": ["ALPHA_VANTAGE_API_KEY"], "note": "免费注册 https://www.alphavantage.co/support/#api-key"}
+    },
+    {
+      "id": "manual",
+      "name": "人工/半自动采集",
+      "name_en": "Manual Ingestion",
+      "type": "manual",
+      "script": "finance/fetchers/manual_fetcher.py",
+      "module": "finance.fetchers.manual_fetcher",
+      "command": "python -m finance.fetchers.manual_fetcher --instruments CN.AU9999 --note '人工录入'",
+      "coverage": {"data_classes": ["*"], "regions": ["*"], "exchanges": ["*"], "time_levels": ["*"], "trade_types": ["*"]},
+      "fetchers": [
+        {"name": "manual_entry", "desc": "人工录入数据", "inputs": ["instrument"], "output": "any"}
+      ],
+      "schedule": {"default_frequency": "manual", "default_cron": null},
+      "disclosure": {"index": true, "meta": true, "full": true},
+      "storage": {"kind": "file", "path": "finance/data/cache/manual/{instrument}.json"},
+      "status": "demo",
+      "requires": {}
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全球金融数据超索引框架</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>🌐 全球金融数据超索引框架</h1>
+  <p class="sub">数据类别 × 国家 × 交易所 × 时间级别 × 品种 × 交易类型 → 数据源脚本 → 触发/定时获取</p>
+</header>
+
+<nav class="tabs">
+  <button data-view="overview" class="active">总览</button>
+  <button data-view="search">六维筛选</button>
+  <button data-view="catalog">数据源目录</button>
+  <button data-view="schedule">调度中心</button>
+  <button data-view="cache">缓存</button>
+</nav>
+
+<main>
+  <!-- 总览 -->
+  <section id="view-overview" class="view active">
+    <div class="cards" id="overview-cards"></div>
+    <h2>数据类别覆盖</h2>
+    <div id="class-bars" class="bars"></div>
+    <h2>数据源</h2>
+    <div id="source-list"></div>
+  </section>
+
+  <!-- 六维筛选 -->
+  <section id="view-search" class="view">
+    <div class="filter-row">
+      <select id="f-data-class"><option value="">数据类别(全部)</option></select>
+      <select id="f-region"><option value="">国家/地区(全部)</option></select>
+      <select id="f-exchange"><option value="">交易所(全部)</option></select>
+      <select id="f-trade-type"><option value="">交易类型(全部)</option></select>
+      <select id="f-time-level"><option value="">时间级别(全部)</option></select>
+      <input id="f-instrument" placeholder="品种名/代码 (如 RB / BTC / 600000)">
+      <button id="btn-search">🔍 筛选</button>
+      <button id="btn-search-summary">📊 聚类统计</button>
+    </div>
+    <div id="search-result"></div>
+  </section>
+
+  <!-- 数据源目录 -->
+  <section id="view-catalog" class="view">
+    <div id="catalog-list"></div>
+  </section>
+
+  <!-- 调度中心 -->
+  <section id="view-schedule" class="view">
+    <div class="filter-row">
+      <input id="s-instrument" placeholder="品种 id (如 CN.RB / CRYPTO.BTC)">
+      <input id="s-source" placeholder="数据源 (akshare/ccxt/fred...)">
+      <input id="s-every" placeholder="频率 (5m/1h/1d)">
+      <input id="s-at" placeholder="每天时刻 (HH:MM, 可选)">
+      <button id="btn-add-task">➕ 添加任务</button>
+      <button id="btn-run-once">▶ 执行到期</button>
+    </div>
+    <div id="task-list"></div>
+  </section>
+
+  <!-- 缓存 -->
+  <section id="view-cache" class="view">
+    <div id="cache-list"></div>
+  </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
