@@ -8,6 +8,7 @@
   schedule  调度: 增删查任务 / run-once / daemon (等价 finance.scheduler)
   catalog   数据源目录查询 (等价 finance.catalog)
   taxonomy  分类体系查询 (等价 finance.taxonomy)
+  lance     LanceDB 统一管理: 渠道/列/参数/任务/数据/挖掘 (等价 finance.lance.cli)
   api       启动 REST API 服务
 
 用法:
@@ -21,6 +22,11 @@
   python -m finance.cli schedule --run-once
   python -m finance.cli catalog --match --data-class crypto
   python -m finance.cli taxonomy --stats
+  python -m finance.cli lance init          # LanceDB 建表+种子初始化
+  python -m finance.cli lance fetch --channel ccxt --instrument CRYPTO.BTC
+  python -m finance.cli lance tasks --add --channel akshare --instrument CN.RB --every 1d
+  python -m finance.cli lance discovery --run
+  python -m finance.cli lance data --stats
 """
 
 from __future__ import annotations
@@ -100,6 +106,10 @@ def main():
     # ---- api ----
     p = sub.add_parser("api", help="启动 REST API")
     p.add_argument("--port", type=int, default=8100)
+
+    # ---- lance (LanceDB 统一管理) ----
+    p = sub.add_parser("lance", help="LanceDB 统一管理: 渠道/列/参数/任务/数据/挖掘")
+    p.add_argument("args", nargs=argparse.REMAINDER, help="转发给 finance.lance.cli 的参数")
 
     args = ap.parse_args()
 
@@ -218,6 +228,10 @@ def main():
     elif args.cmd == "api":
         from finance.api import run
         run(port=args.port)
+
+    elif args.cmd == "lance":
+        from finance.lance.cli import main as lance_main
+        sys.exit(lance_main(args.args or ["stats"]))
 
     else:
         ap.print_help()

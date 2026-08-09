@@ -16,21 +16,33 @@
   scheduler   调度器: 频率/时间/自动获取 (cron / interval / manual)
   registry    获取器注册表: 脚本名 -> 可调用适配器, 触发获取
 
+LanceDB 统一数据管理层 (Issue #6 二期):
+  finance/lance/     七表统一管理: 渠道/列定义/参数/任务/数据/日志/挖掘候选 (全部 LanceDB)
+  finance/crawler/   爬虫解耦: 通用模板(base/fields/dispatcher) + 分渠道 fetchers
+  finance.cli lance  统一 CLI: init/fetch/tasks/discovery/data/logs/stats
+
 目录结构:
   config/finance/taxonomy.json   六维分类体系
   config/finance/catalog.json    数据源注册目录
   finance/fetchers/              每个分类的获取脚本 (适配器骨架 + 可扩展)
+  finance/crawler/               解耦爬虫: 通用引擎 + 分渠道 fetchers
+  finance/lance/                 LanceDB 七表统一数据管理
   finance/data/cache/            获取数据的落地缓存
+  finance/data/lance/            LanceDB 数据目录 (运行时生成)
 
 快速开始:
   python -m finance.cli search --data-class stock --region CN
   python -m finance.cli index --instrument CN.RB
   python -m finance.cli fetch --instrument CN.RB --time-level 1d --source akshare
   python -m finance.cli schedule --instrument CRYPTO.BTC --every 5m
+  python -m finance.cli lance init          # LanceDB 建表 + 种子初始化
+  python -m finance.cli lance fetch --channel ccxt --instrument CRYPTO.BTC
+  python -m finance.cli lance tasks --add --channel akshare --instrument CN.RB --every 1d
+  python -m finance.cli lance discovery --run
   python -m finance.api --port 8100
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from finance.taxonomy import Taxonomy, load_taxonomy, TAXONOMY_PATH
 from finance.catalog import Catalog, load_catalog, CATALOG_PATH

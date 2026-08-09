@@ -1,0 +1,13 @@
+lancedb>=0.30
+pyarrow>=14.0
+pandas>=2.0
+numpy>=1.24
+
+# 可选: 各渠道真实数据获取 (未安装时自动降级 demo 数据)
+# akshare>=1.12
+# yfinance>=0.2
+# ccxt>=4.0
+# feedparser>=6.0
+
+# 可选: 完整 cron 解析
+# croniter>=2.0

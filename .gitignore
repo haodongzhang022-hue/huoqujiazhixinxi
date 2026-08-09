@@ -33,3 +33,6 @@ data/heal_log.json
 # 金融框架运行时数据 (本地生成, 不入库)
 finance/data/cache/
 finance/data/scheduler.json
+
+# LanceDB 统一数据管理层运行时数据 (本地生成, 不入库)
+finance/data/lance/
