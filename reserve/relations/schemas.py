@@ -10,7 +10,8 @@ from typing import Any, Literal, Optional
 from pydantic import BaseModel, Field
 
 ModelType = Literal["correlation", "lead_lag", "vol_spillover", "linear",
-                    "momentum", "exp_decay", "var"]
+                    "momentum", "exp_decay", "var", "rolling_corr",
+                    "regime_shift", "event_study", "self_corr"]
 VerdictType = Literal["strong", "good", "weak", "insufficient"]
 
 
@@ -63,6 +64,55 @@ class RelationComparison(BaseModel):
     verdict: VerdictType = Field("insufficient", description="预测能力评价")
     iterations: list[str] = Field(default_factory=list, description="后续迭代建议")
     fit: dict[str, Any] = Field(default_factory=dict)
+
+
+class ModelRanking(BaseModel):
+    model: str = Field("", description="模型名")
+    score: float = Field(0.0, description="综合得分")
+    verdict: Optional[str] = None
+    r2: Optional[float] = None
+    hit_rate: Optional[float] = None
+
+
+class ModelCompareResult(BaseModel):
+    """多模型对比结果 (自动选最优预测模型)。"""
+
+    best: Optional[RelationComparison] = None
+    ranking: list[ModelRanking] = Field(default_factory=list)
+    comparisons: list[RelationComparison] = Field(default_factory=list)
+
+
+class NetworkNode(BaseModel):
+    key: str = ""
+    dim: Any = None
+    in_strength: float = 0.0
+    out_strength: float = 0.0
+    total_strength: float = 0.0
+    in_edges: int = 0
+    out_edges: int = 0
+    degree: int = 0
+    in_centrality: float = 0.0
+    out_centrality: float = 0.0
+    total_centrality: float = 0.0
+    hub_score: float = 0.0
+    authority_score: float = 0.0
+
+
+class NetworkCluster(BaseModel):
+    id: str = ""
+    members: list[str] = Field(default_factory=list)
+    size: int = 0
+    total_strength: float = 0.0
+    label: str = ""
+
+
+class RelationNetwork(BaseModel):
+    """传导网络: 节点中心性 + 强关联簇 + 网络摘要。"""
+
+    nodes: list[NetworkNode] = Field(default_factory=list)
+    edges: list[dict[str, Any]] = Field(default_factory=list)
+    clusters: list[NetworkCluster] = Field(default_factory=list)
+    summary: dict[str, Any] = Field(default_factory=dict)
 
 
 class RelationMatrix(BaseModel):

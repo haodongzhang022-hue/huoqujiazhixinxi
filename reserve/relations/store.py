@@ -36,8 +36,29 @@ class RelationStore:
         self.root = Path(root) if root else DEFAULT_DIR
         self.edges_dir = self.root / "edges"
         self.comps_dir = self.root / "comparisons"
+        self.series_dir = self.root / "series"
         self.edges_dir.mkdir(parents=True, exist_ok=True)
         self.comps_dir.mkdir(parents=True, exist_ok=True)
+        self.series_dir.mkdir(parents=True, exist_ok=True)
+
+    # ---------- 序列快照 (供前端/API 实时多模型对比) ----------
+    def save_series(self, dim_key: str, series: dict, max_points: int | None = 300) -> Path:
+        """保存某维度的序列快照 (截断到 max_points 点, 保留最近)。"""
+        if max_points and len(series) > max_points:
+            keys = sorted(series)[-max_points:]
+            series = {k: series[k] for k in keys}
+        p = self.series_dir / f"{_safe(dim_key)}.json"
+        p.write_text(json.dumps(series, ensure_ascii=False), encoding="utf-8")
+        return p
+
+    def load_series(self, dim_key: str) -> dict | None:
+        p = self.series_dir / f"{_safe(dim_key)}.json"
+        if not p.exists():
+            return None
+        return json.loads(p.read_text(encoding="utf-8"))
+
+    def list_series_keys(self) -> list[str]:
+        return [p.stem for p in sorted(self.series_dir.glob("*.json"))]
 
     # ---------- 矩阵骨架 ----------
     def save_matrix(self, matrix: dict) -> Path:

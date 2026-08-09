@@ -344,6 +344,13 @@ tr:hover td { background: rgba(56, 189, 248, 0.05); }
 .badge.verdict-insufficient { background: rgba(148, 163, 184, 0.18); color: var(--muted); }
 
 #rel-canvas { width: 100%; max-width: 920px; height: auto; background: #0b1220; border: 1px solid var(--border); border-radius: 8px; margin: 10px 0; }
+#rel-rolling-canvas { width: 100%; max-width: 920px; height: auto; background: #0b1220; border: 1px solid var(--border); border-radius: 8px; margin: 10px 0; }
+#rel-network-canvas { width: 100%; max-width: 100%; height: auto; background: #0b1220; border: 1px solid var(--border); border-radius: 8px; margin: 10px 0; }
+.rel-network-wrap { overflow-x: auto; }
+.rel-toolbar .select {
+  padding: 8px 12px; background: #0b1220; color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px; font-size: 13px; cursor: pointer;
+}
 .rel-metrics { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0; }
 .rel-metrics .stat-card { min-width: 110px; }
 .rel-iter { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--yellow); margin-top: 8px; }

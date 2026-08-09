@@ -88,7 +88,10 @@ def predict_impact(series_a: dict, series_b: dict, params: dict, lag: int = 1,
     for i, d in enumerate(dates):
         actual.append(float(rb[d]))
         pi = i - lag
-        if pi >= 0 and dates[pi] in ra:
+        # 滞后可能为负 (B 领先 A): 用未来值配对, 保证索引合法
+        if pi < 0:
+            pi = i + abs(lag)
+        if 0 <= pi < len(dates) and dates[pi] in ra:
             base = a_ + b_ * float(ra[dates[pi]])
             if c_ and i - 1 >= 0:
                 base += c_ * float(rb[dates[i - 1]])
@@ -201,3 +204,48 @@ def compare(series_a: dict, series_b: dict, model: str = "linear",
             "train_size": len(train_dates), "test_size": len(test_dates),
             "curve": test_curve, "metrics": metrics, "verdict": verdict,
             "iterations": iters, "fit": fit}
+
+
+def compare_models(series_a: dict, series_b: dict,
+                   models: list[str] | None = None,
+                   lag: int | None = None, train_ratio: float = 0.7,
+                   max_lag: int = 10) -> dict:
+    """多模型对比 —— 自动尝试多种模型, 挑出预测能力最优者 (响应 ISSUE 迭代建议「换模型」)。
+
+    对每种模型跑 `compare`, 按测试段综合得分排序:
+      score = r2*0.5 + hit_rate*0.3 + (1 - nrmse)*0.2
+    返回 {best, ranking, comparisons}。
+    """
+    from reserve.relations.engine import MODELS
+
+    if models is None:
+        # 默认对比的模型集 (排除纯变量/事件类, 保留可预测的回归族 + VAR)
+        models = [m for m in ("linear", "momentum", "exp_decay", "var", "correlation") if m in MODELS]
+    comparisons = []
+    for m in models:
+        try:
+            cmp = compare(series_a, series_b, model=m, lag=lag,
+                          train_ratio=train_ratio, max_lag=max_lag)
+        except Exception:
+            continue
+        cmp["model"] = m
+        comparisons.append(cmp)
+
+    def _score(c):
+        mt = c.get("metrics") or {}
+        r2 = mt.get("r2") or 0.0
+        hit = mt.get("hit_rate") or 0.0
+        nrmse = mt.get("nrmse")
+        nr = 1.0 - nrmse if nrmse is not None else 0.5
+        return round(r2 * 0.5 + hit * 0.3 + nr * 0.2, 4)
+
+    for c in comparisons:
+        c["_score"] = _score(c)
+    comparisons.sort(key=lambda c: -c["_score"])
+    ranking = [{"model": c["model"], "score": c.pop("_score", 0.0),
+                "verdict": c.get("verdict"), "r2": (c.get("metrics") or {}).get("r2"),
+                "hit_rate": (c.get("metrics") or {}).get("hit_rate")} for c in comparisons]
+    best = comparisons[0] if comparisons else None
+    if best:
+        best.pop("_score", None)
+    return {"best": best, "ranking": ranking, "comparisons": comparisons}

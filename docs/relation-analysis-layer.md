@@ -27,9 +27,10 @@ reserve/relations/
 ├── __init__.py    包说明
 ├── dims.py        维度定义与解析（市场/国家/交易所/品种/交易类型/时间级别 -> 目录 key）
 ├── frame.py       矩阵定义：目标集 -> 全两两有序边（排除自环、方向敏感）
-├── engine.py      关联评估引擎：7 种量化模型 + 领先滞后 + 波动溢出 + 稳定性
-├── compare.py     预测 vs 实际 曲线对比 + 误差统计 + verdict 评价 + 迭代建议
-├── store.py       关联矩阵持久化（relation_store/，JSON，兼容 LanceDB 预留）
+├── engine.py      关联评估引擎：11 种量化模型（固定值/时变/回归/VAR/结构突变/事件研究/自相关）
+├── compare.py     预测 vs 实际 曲线对比 + 误差统计 + verdict 评价 + 多模型自动择优
+├── network.py     传导网络分析：节点中心性 / 强关联簇 / 传导路径（矩阵之上的全局视角）
+├── store.py       关联矩阵持久化（relation_store/，JSON，兼容 LanceDB 预留）+ 序列快照
 ├── schemas.py     Pydantic 数据契约（对外 API 稳定输出）
 └── demo.py        内置演示数据 + 端到端演示（python -m reserve.relations.demo）
 ```
@@ -88,8 +89,16 @@ market.country.exchange.symbol.asset.timeframe
 | `momentum` | B_t = a + b·A(t-1) + c·B(t-1)（扩散+自身动量） | R² |
 | `exp_decay` | 指数衰减加权回归（近因效应） | R² |
 | `var` | 双变量 VAR(1)，格兰杰式增量 R² 检验 | 增量 R² + 弹性 |
+| `rolling_corr` | **时变相关**：滚动窗口相关曲线，回答"关联大多数时候是变量" | 均相关+趋势 |
+| `regime_shift` | **结构突变**：前后段相关对比，检出 strengthen/weaken/reverse/appear/disappear | 后段相关+突变 |
+| `event_study` | **事件研究**：A 异常波动后 B 的窗口反应 + 命中率 | 平均反应+命中率 |
+| `self_corr` | **自相关**：B 自身动量/均值回归（识别"自己影响自己"） | 最强自相关 |
 
 输出统一字段：`edge / direction / model / strength(0~1) / sign(±1) / lag / stability(0~1) / sample_size / params / metrics / insufficient_data / modeled_at`
+
+> 💡 **第二轮完善**：`rolling_corr`（时变关联曲线）直接对齐 ISSUE 原文"大多数时候可能是变量"；
+> `regime_shift`（结构突变）回答"关系是否随时间切换"；`event_study`（事件研究）回答"A 发生大事时 B 怎么反应"；
+> `self_corr`（自相关）补上"自己影响自己"的评估。
 
 ---
 
@@ -113,15 +122,47 @@ market.country.exchange.symbol.asset.timeframe
 
 每条边附带 `iterations`（具体迭代建议：增加样本 / 换模型 / 引入宏观因子 / 缩短预测窗口 / 细分时间级别…）。
 
+### 4.1 多模型自动择优（`compare_models`）—— 回答“换模型能不能更好”
+
+`compare_models(series_a, series_b)` 自动试跑 linear / momentum / exp_decay / var / correlation
+五种模型，按测试段综合得分 `score = r2*0.5 + hit_rate*0.3 + (1-nrmse)*0.2` 排序，返回
+`{best, ranking, comparisons}`：
+
+- `best`：预测能力最优的模型及其曲线（可覆盖默认模型结果）
+- `ranking`：各模型得分/verdict 排行（前端表格展示“换模型”的收益）
+- 直接响应 ISSUE 迭代建议中的“换模型”，无需人工反复试参
+
 ---
 
-## 5. 持久化（`store.py`）
+## 5. 传导网络（`network.py`）—— 矩阵之上的全局视角
+
+单条边回答“A 对 B 的影响”，网络回答“**整个市场怎么联动**”：
+
+| 能力 | 说明 |
+|---|---|
+| 节点中心性 | 每个维度的出强度/入强度/总强度 + hub(影响源)/authority(被影响) 归一化评分 |
+| 强关联簇 | 双向强连接节点归簇（社团发现），识别“哪些品种抱团联动” |
+| 传导路径 | 源→目标的强传导链路（边强度乘积排序），识别“风险/信息沿什么路径传导” |
+| 网络摘要 | 节点数/边数/密度/最大簇/最强枢纽/最强边，供页面卡片与 API 直接消费 |
+
+典型输出（演示数据）：
+```
+🕸️ 传导网络: 8 节点 · 56 边 · 密度 1.0 · 2 个强关联簇
+🧭 最强枢纽(影响源): macro...US10Y (利率是全局领先驱动)
+🎯 最强权威(被影响): equity...000300 (权益被宏观/汇率/风险偏好共同驱动)
+💠 最大联动簇: 000300 指数 + 000300 ETF (同品种不同交易类型)
+```
+
+---
+
+## 6. 持久化（`store.py`）
 
 ```
 relation_store/
 ├── matrix.json          # 矩阵骨架（维度 + 两两有序边清单）
 ├── edges/<edge>.json    # 每条边的评估结果（edge = "A -> B" 安全转义）
 ├── comparisons/<edge>.json  # 每条边的预测 vs 实际对比
+├── series/<dim>.json    # 各维度序列快照（供前端/API 实时多模型对比）
 └── meta.json            # 更新时间/统计
 ```
 
@@ -130,7 +171,7 @@ relation_store/
 
 ---
 
-## 6. API 与页面
+## 7. API 与页面
 
 FastAPI 新增 `/api/v1/relations/*` 一组端点（tag: 二次整理层）：
 
@@ -138,23 +179,33 @@ FastAPI 新增 `/api/v1/relations/*` 一组端点（tag: 二次整理层）：
 |---|---|
 | `GET /api/v1/relations/matrix` | 矩阵骨架（维度 + 两两有序边） |
 | `GET /api/v1/relations/edges` | 关联边列表（过滤 min_strength/model/verdict，排序） |
-| `GET /api/v1/relations/edge/{edge}` | 单边详情（评估 + 预测对比曲线数据） |
+| `GET /api/v1/relations/edge/{edge}` | 单边详情（评估 + 预测对比 + 时变曲线数据） |
 | `GET /api/v1/relations/comparisons` | 预测能力对比列表（按 R² 排序） |
 | `POST /api/v1/relations/evaluate` | 实时评估两条序列（A→B） |
 | `POST /api/v1/relations/compare` | 实时滚动回测（预测 vs 实际） |
 | `POST /api/v1/relations/run-demo` | 一键运行内置演示（8 维 → 56 条边） |
+| `GET /api/v1/relations/network` | **传导网络**：节点中心性 + 强关联簇 + 摘要 |
+| `GET /api/v1/relations/paths` | **传导路径**：源→目标强链路 |
+| `POST /api/v1/relations/compare-models` | **多模型自动择优**（换模型迭代） |
+| `POST /api/v1/relations/auto-model` | 批量/调度用：对序列对自动选最优模型 |
 
-Web 管理台新增「**关联分析**」页签：
+Web 管理台「**关联分析**」页签：
 - 预测能力分布统计卡（strong/good/weak/insufficient）
-- 两两关联边表格（强度条 / 方向 / 领先 / 稳定性 / 模型 / 测试段 R²·命中率 / 评价）
+- **传导网络图**（Canvas）：节点大小=影响强度，连线=关联边，附枢纽/权威/联动簇摘要
+- 两两关联边表格（强度条 / 方向 / 领先 / 稳定性 / 模型 / 测试段 R²·命中率 / 评价），支持按模型筛选
 - 点击任意边 → **Canvas 双曲线图**：蓝=实际影响曲线，橙虚线=模型预测影响曲线，附 R²/命中率/RMSE/MAE 与迭代建议
+- **时变关联强度曲线**（rolling_corr）：绿/红线展示关联强度随时间波动
+- **多模型择优表**：同一对序列试跑 5 种模型，展示最优模型与各模型得分
 
 ---
 
-## 7. 演示（`demo.py`）
+## 8. 演示（`demo.py`）
 
 ```bash
 python -m reserve.relations.demo --days 200 --model linear --max-lag 8
+python -m reserve.relations.demo --model rolling_corr   # 时变关联视角
+python -m reserve.relations.demo --model regime_shift   # 结构突变视角
+python -m reserve.relations.demo --compare-models       # 输出每条边最优模型
 ```
 
 内置 8 个维度 × 合成数据（含可验证的真实传导结构）：
@@ -162,11 +213,12 @@ US10Y 宏观领先影响权益/铜/黄金/汇率（收益率级传导）、BTC�
 000300 指数↔ETF 高度同步（同品种不同交易类型）、USDCNY→A股 负相关、BTC 4h 跨时间级别自动重采样对齐。
 
 演示验证（`tests/test_relations.py::test_demo_summary_recovers_structure`）：
-引擎能还原出「000300 指数 ↔ 000300 ETF」为最强关联边，且 56 条边全部产出预测能力评价。
+引擎能还原出「000300 指数 ↔ 000300 ETF」为最强关联边，且 56 条边全部产出预测能力评价，
+并额外输出传导网络（枢纽/权威/联动簇）。
 
 ---
 
-## 8. 与数据获取层（ISSUE #6）的对接方式
+## 9. 与数据获取层（ISSUE #6）的对接方式
 
 数据获取层落地后，只需把面板数据归一化为 `{dim_key: {date: value}}`：
 

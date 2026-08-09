@@ -656,6 +656,8 @@ async function runHeal(checkOnly) {
 
 /* ---------------- 二次整理层: 关联分析 (ISSUE #7) ---------------- */
 
+const REL_MODELS = ["correlation", "lead_lag", "vol_spillover", "linear", "momentum", "exp_decay", "var", "rolling_corr", "regime_shift", "event_study", "self_corr"];
+
 function verdictBadge(v) {
   const map = { strong: "强", good: "良好", weak: "弱", insufficient: "不足" };
   return `<span class="badge verdict-${esc(v)}">${esc(map[v] || v)}</span>`;
@@ -673,12 +675,19 @@ function dimShort(d) {
   return parts.join(".") || "*";
 }
 
+function dimKey(d) {
+  if (!d) return "";
+  return [d.market, d.country, d.exchange, d.symbol, d.asset, d.timeframe]
+    .map(x => (x == null || x === "") ? "*" : x).join(".");
+}
+
 function edgeRow(e) {
   const m = e.metrics || {};
   const verdict = (e.comparison && e.comparison.verdict) || "";
   const hit = e.comparison && e.comparison.metrics ? e.comparison.metrics.hit_rate : "";
   const r2 = e.comparison && e.comparison.metrics ? e.comparison.metrics.r2 : "";
   const bar = `<div class="rel-bar"><div class="rel-bar-fill" style="width:${Math.round((e.strength || 0) * 100)}%"></div></div>`;
+  const modelTag = e.model === "rolling_corr" ? "时变相关" : e.model === "regime_shift" ? "结构突变" : e.model === "event_study" ? "事件研究" : e.model === "self_corr" ? "自相关" : e.model;
   return `
     <tr>
       <td class="rel-edge">${esc(dimShort(e.from))} <span class="arrow">→</span> ${esc(dimShort(e.to))}</td>
@@ -686,7 +695,7 @@ function edgeRow(e) {
       <td class="center">${e.sign > 0 ? "<span class='pos'>+</span>" : e.sign < 0 ? "<span class='neg'>−</span>" : "0"}</td>
       <td class="center">${esc(e.lag)}</td>
       <td class="center">${(e.stability || 0).toFixed(2)}</td>
-      <td><span class="badge">${esc(e.model)}</span></td>
+      <td><span class="badge">${esc(modelTag)}</span></td>
       <td class="center">${r2 !== "" ? esc(r2) : "-"}${hit !== "" ? ` <span class="muted">hit ${esc(hit)}</span>` : ""}</td>
       <td>${verdict ? verdictBadge(verdict) : "-"}</td>
       <td><a href="#" class="link" data-edge="${esc(e.edge)}" data-dim="${esc(JSON.stringify({from: e.from, to: e.to}))}">对比曲线</a></td>
@@ -728,16 +737,97 @@ function drawCurve(canvas, curve, title) {
   ctx.fillText(title || "", pad.l, H - 2);
 }
 
+/* 时变关联曲线 (rolling_corr) */
+function drawRollingCorr(canvas, curve, title) {
+  const pts = curve || [];
+  if (!pts.length || !canvas) return;
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const pad = { l: 46, r: 12, t: 12, b: 22 };
+  let min = Math.min(...pts.map(p => p.corr)), max = Math.max(...pts.map(p => p.corr));
+  const lim = Math.max(Math.abs(min), Math.abs(max), 0.2);
+  min = -lim; max = lim;
+  const x = i => pad.l + (i / Math.max(1, pts.length - 1)) * (W - pad.l - pad.r);
+  const y = v => pad.t + (1 - (v - min) / (max - min)) * (H - pad.t - pad.b);
+  // zero line
+  ctx.strokeStyle = "#3a4150"; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+  ctx.beginPath(); ctx.moveTo(pad.l, y(0)); ctx.lineTo(W - pad.r, y(0)); ctx.stroke(); ctx.setLineDash([]);
+  // grid + labels
+  for (let g = 0; g <= 4; g++) {
+    const gy = pad.t + (g / 4) * (H - pad.t - pad.b);
+    ctx.strokeStyle = "#2a2f3a"; ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(W - pad.r, gy); ctx.stroke();
+    const val = max - (g / 4) * (max - min);
+    ctx.fillStyle = "#8b93a7"; ctx.font = "10px sans-serif"; ctx.textAlign = "right";
+    ctx.fillText(val.toFixed(2), pad.l - 4, gy + 3);
+  }
+  // corr line (红=负, 绿=正)
+  pts.forEach((p, i) => {
+    const px = x(i), py = y(p.corr);
+    ctx.strokeStyle = p.corr >= 0 ? "#34d399" : "#f87171";
+    ctx.lineWidth = 1.6;
+    if (i === 0) ctx.beginPath();
+    ctx.lineTo(px, py);
+    if (i === pts.length - 1) ctx.stroke();
+  });
+  ctx.fillStyle = "#8b93a7"; ctx.font = "10px sans-serif";
+  ctx.fillText(title || "时变关联强度", pad.l, H - 2);
+}
+
+/* 网络力导向简易图 (Canvas, 无外部依赖) */
+function drawNetwork(canvas, net, labels) {
+  const nodes = net.nodes || [];
+  const edges = net.edges || [];
+  if (!nodes.length || !canvas) return;
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const pad = 50;
+  const byKey = {};
+  nodes.forEach((n, i) => byKey[n.key] = i);
+  // 简单圆环布局 + 按 hub 强度调整半径
+  const N = nodes.length;
+  const pos = nodes.map((n, i) => {
+    const ang = (2 * Math.PI * i) / N - Math.PI / 2;
+    const r = Math.min(W, H) / 2 - pad - (n.hub_score || 0) * 30;
+    return { x: W / 2 + r * Math.cos(ang), y: H / 2 + r * Math.sin(ang) };
+  });
+  // edges
+  edges.forEach(e => {
+    const a = byKey[e.from], b = byKey[e.to];
+    if (a == null || b == null) return;
+    ctx.strokeStyle = e.sign >= 0 ? "rgba(52,211,153,0.35)" : "rgba(248,113,113,0.35)";
+    ctx.lineWidth = Math.max(0.5, (e.strength || 0) * 3);
+    ctx.beginPath(); ctx.moveTo(pos[a].x, pos[a].y); ctx.lineTo(pos[b].x, pos[b].y); ctx.stroke();
+  });
+  // nodes
+  nodes.forEach((n, i) => {
+    const r = 8 + (n.hub_score || 0) * 14;
+    ctx.beginPath(); ctx.arc(pos[i].x, pos[i].y, r, 0, Math.PI * 2);
+    ctx.fillStyle = n.hub_score >= 0.7 ? "#fbbf24" : n.hub_score >= 0.4 ? "#4fc3f7" : "#334155";
+    ctx.fill();
+    ctx.strokeStyle = "#0b1220"; ctx.lineWidth = 1.5; ctx.stroke();
+    const label = (labels && labels[n.key]) || n.key.split(".").filter(s => s !== "*").join(".") || n.key;
+    ctx.fillStyle = "#cbd5e1"; ctx.font = "10px sans-serif"; ctx.textAlign = "center";
+    ctx.fillText(label.length > 14 ? label.slice(0, 13) + "…" : label, pos[i].x, pos[i].y + r + 10);
+  });
+}
+
 async function renderRelations(container) {
-  const [matrix, edgesData] = await Promise.all([
+  const [matrix, edgesData, netData] = await Promise.all([
     getJSON(`${API}/relations/matrix`),
     getJSON(`${API}/relations/edges?limit=500`),
+    getJSON(`${API}/relations/network?min_strength=0.03`),
   ]);
   const edges = edgesData.items || [];
   const dims = (matrix.dimensions || []).map(d => dimShort(d));
   const counts = { strong: 0, good: 0, weak: 0, insufficient: 0 };
   edges.forEach(e => { if (e.comparison && counts[e.comparison.verdict] != null) counts[e.comparison.verdict]++; });
-  const totalV = Object.values(counts).reduce((a, b) => a + b, 0);
+  const net = netData || { nodes: [], edges: [], clusters: [], summary: {} };
+  const ns = net.summary || {};
+  const labels = {};
+  (matrix.dimensions || []).forEach(d => { labels[dimShort(d)] = dimShort(d); });
+  net.nodes.forEach(n => { if (n.dim) labels[n.key] = dimShort(n.dim); });
 
   let html = `
   <div class="panel">
@@ -745,6 +835,10 @@ async function renderRelations(container) {
     <p class="muted">跨市场 / 跨国家 / 跨品种 / 跨交易类型 / 跨时间级别的<b>两两双向</b>影响评估与量化；每条边 A→B 独立建模、独立验证预测能力。</p>
     <div class="rel-toolbar">
       <button class="btn" id="rel-run-demo">▶ 运行演示数据</button>
+      <select id="rel-model-filter" class="select">
+        <option value="">全部模型</option>
+        ${REL_MODELS.map(m => `<option value="${m}">${esc(m)}</option>`).join("")}
+      </select>
       <span class="muted">矩阵 ${esc(dims.length)} 维 · ${esc(edgesData.count)} 条有向边</span>
     </div>
     <div class="stat-row">
@@ -753,10 +847,28 @@ async function renderRelations(container) {
     <div class="rel-dims muted">维度: ${dims.map(esc).join(" &nbsp;·&nbsp; ")}</div>
   </div>
   <div class="panel">
+    <h2>🕸️ 传导网络（谁影响全局 · 谁被影响最多 · 谁抱团联动）</h2>
+    <div class="stat-row">
+      <div class="stat-card"><div class="num">${esc(ns.node_count ?? 0)}</div><div class="label">网络节点</div></div>
+      <div class="stat-card"><div class="num">${esc(ns.edge_count ?? 0)}</div><div class="label">有效边</div></div>
+      <div class="stat-card"><div class="num">${esc(ns.density ?? 0)}</div><div class="label">网络密度</div></div>
+      <div class="stat-card"><div class="num">${esc(ns.cluster_count ?? 0)}</div><div class="label">联动簇</div></div>
+    </div>
+    <div class="rel-network-wrap">
+      <canvas id="rel-network-canvas" width="900" height="340"></canvas>
+    </div>
+    <div class="rel-dims muted">
+      🧭 最强枢纽: ${(ns.top_hubs || []).slice(0, 3).map(h => esc(h.key)).join(" &nbsp;·&nbsp; ") || "-"}
+      &nbsp;&nbsp;|&nbsp;&nbsp;
+      🎯 最强被影响: ${(ns.top_authorities || []).slice(0, 3).map(a => esc(a.key)).join(" &nbsp;·&nbsp; ") || "-"}
+    </div>
+    <div class="rel-dims muted">💠 联动簇: ${(net.clusters || []).map(c => esc(c.label)).join(" &nbsp;·&nbsp; ") || "-"}</div>
+  </div>
+  <div class="panel">
     <h2>📊 两两关联边（按强度排序）</h2>
     <table class="rel-table">
       <thead><tr><th>关联 (A → B)</th><th>强度</th><th>方向</th><th>领先</th><th>稳定</th><th>模型</th><th>预测能力</th><th>评价</th><th></th></tr></thead>
-      <tbody>${edges.map(edgeRow).join("") || '<tr><td colspan="9" class="empty">暂无数据, 点击「运行演示数据」或等待数据获取层接入</td></tr>'}</tbody>
+      <tbody id="rel-edges-body">${edges.map(edgeRow).join("") || '<tr><td colspan="9" class="empty">暂无数据, 点击「运行演示数据」或等待数据获取层接入</td></tr>'}</tbody>
     </table>
   </div>
   <div class="panel" id="rel-detail">
@@ -774,18 +886,70 @@ async function renderRelations(container) {
     } catch (e) { alert("运行失败: " + e.message); }
   });
 
+  container.querySelector("#rel-model-filter").addEventListener("change", async ev => {
+    const m = ev.target.value;
+    const url = m ? `${API}/relations/edges?limit=500&model=${encodeURIComponent(m)}` : `${API}/relations/edges?limit=500`;
+    try {
+      const data = await getJSON(url);
+      const body = document.getElementById("rel-edges-body");
+      body.innerHTML = (data.items || []).map(edgeRow).join("") || '<tr><td colspan="9" class="empty">该模型暂无数据</td></tr>';
+      bindEdgeLinks(container);
+    } catch (e) { alert("筛选失败: " + e.message); }
+  });
+
+  bindEdgeLinks(container);
+  drawNetwork(document.getElementById("rel-network-canvas"), net, labels);
+}
+
+function bindEdgeLinks(container) {
   container.querySelectorAll("a[data-edge]").forEach(a => {
     a.addEventListener("click", async ev => {
       ev.preventDefault();
       const edge = a.dataset.edge;
+      const dim = JSON.parse(a.dataset.dim || "{}");
       try {
         const data = await getJSON(`${API}/relations/edge/${encodeURIComponent(edge)}`);
         const cmp = data.comparison;
         const body = document.getElementById("rel-detail-body");
         const tip = document.getElementById("rel-detail-tip");
         tip.textContent = `${data.edge} · 模型 ${data.model} · 强度 ${(data.strength || 0).toFixed(3)} · 领先 ${data.lag} 期 · 方向 ${data.sign > 0 ? "+" : data.sign < 0 ? "−" : "0"}`;
+
+        // 多模型自动择优 (对比曲线旁)
+        let bestHtml = "";
+        try {
+          const mr = await fetch(`${API}/relations/compare-models`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              label_a: dimShort(dim.from), label_b: dimShort(dim.to),
+              from_key: dimKey(dim.from),
+              to_key: dimKey(dim.to),
+            }),
+          });
+          if (mr.ok) {
+            const mj = await mr.json();
+            const rank = mj.ranking || [];
+            if (rank.length) {
+              const best = mj.best || {};
+              const bestMetrics = best.metrics || {};
+              bestHtml = `
+                <div class="panel" style="margin-top:10px">
+                  <h3>🧪 多模型自动择优（换模型迭代）</h3>
+                  <div class="rel-metrics">
+                    <div class="stat-card"><div class="num">${esc(best.model || "-")}</div><div class="label">最优模型</div></div>
+                    <div class="stat-card"><div class="num">${esc(bestMetrics.r2 ?? "-")}</div><div class="label">最优 R²</div></div>
+                    <div class="stat-card"><div class="num">${esc(bestMetrics.hit_rate ?? "-")}</div><div class="label">最优命中率</div></div>
+                    <div class="stat-card"><div class="num">${best.verdict ? verdictBadge(best.verdict) : "-"}</div><div class="label">最优评价</div></div>
+                  </div>
+                  <table class="rel-table"><thead><tr><th>模型</th><th>综合得分</th><th>R²</th><th>命中率</th><th>评价</th></tr></thead><tbody>
+                    ${rank.map(r => `<tr><td class="rel-edge">${esc(r.model)}</td><td>${esc(r.score)}</td><td>${esc(r.r2 ?? "-")}</td><td>${esc(r.hit_rate ?? "-")}</td><td>${r.verdict ? verdictBadge(r.verdict) : "-"}</td></tr>`).join("")}
+                  </tbody></table>
+                </div>`;
+            }
+          }
+        } catch (e) { /* 无数据时跳过 */ }
+
         if (!cmp || !cmp.curve || !cmp.curve.dates.length) {
-          body.innerHTML = '<div class="empty">该边无测试段对比数据 (样本不足)</div>';
+          body.innerHTML = '<div class="empty">该边无测试段对比数据 (样本不足)</div>' + bestHtml;
           return;
         }
         const m = cmp.metrics || {};
@@ -798,9 +962,17 @@ async function renderRelations(container) {
             <div class="stat-card"><div class="num">${esc(m.mae ?? "-")}</div><div class="label">MAE</div></div>
             <div class="stat-card"><div class="num">${verdictBadge(cmp.verdict)}</div><div class="label">预测能力</div></div>
           </div>
-          <div class="rel-iter">${(cmp.iterations || []).map(i => `<div>💡 ${esc(i)}</div>`).join("")}</div>`;
+          ${data.curve && data.curve.length ? `
+          <h3>📉 时变关联强度（变量型关联）</h3>
+          <canvas id="rel-rolling-canvas" width="900" height="200"></canvas>
+          <p class="muted">关联强度随时间波动 (均值 ${esc((data.params && data.params.mean_corr) ?? "-")} · 波动 ${esc((data.params && data.params.std) ?? "-")} · 趋势 ${esc((data.params && data.params.trend) ?? "-")})</p>` : ""}
+          <div class="rel-iter">${(cmp.iterations || []).map(i => `<div>💡 ${esc(i)}</div>`).join("")}</div>` + bestHtml;
         drawCurve(document.getElementById("rel-canvas"), cmp.curve,
           `蓝=实际影响曲线  橙(虚线)=模型预测影响曲线 (${dimShort(data.from)} → ${dimShort(data.to)})`);
+        if (data.curve && data.curve.length) {
+          drawRollingCorr(document.getElementById("rel-rolling-canvas"), data.curve,
+            `时变关联强度 (${dimShort(data.from)} → ${dimShort(data.to)})`);
+        }
       } catch (e) {
         document.getElementById("rel-detail-body").innerHTML = `<div class="empty">加载失败: ${esc(e.message)}</div>`;
       }

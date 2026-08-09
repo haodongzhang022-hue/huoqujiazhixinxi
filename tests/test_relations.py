@@ -235,8 +235,185 @@ def test_fastapi_relations_routes():
     for route in ("/api/v1/relations/matrix", "/api/v1/relations/edges",
                   "/api/v1/relations/edge/{edge:path}", "/api/v1/relations/comparisons",
                   "/api/v1/relations/evaluate", "/api/v1/relations/compare",
-                  "/api/v1/relations/run-demo"):
+                  "/api/v1/relations/run-demo", "/api/v1/relations/network",
+                  "/api/v1/relations/paths", "/api/v1/relations/compare-models",
+                  "/api/v1/relations/auto-model"):
         assert route in paths, f"missing fastapi route: {route}"
+
+
+# ---------- 新增: 时变关联 / 结构突变 / 事件研究 / 自相关 (ISSUE #7 第二轮) ----------
+
+def test_new_models_all_run():
+    a, b = _two_series(beta=0.5, lag=1, n=150)
+    for model in ("rolling_corr", "regime_shift", "event_study", "self_corr"):
+        res = evaluate_pair(a, b, model=model, max_lag=5)
+        assert res["model"] == model
+        assert 0.0 <= res.get("strength", 0) <= 1.0
+        assert "metrics" in res
+
+
+def test_rolling_corr_variable_curve():
+    """滚动相关应产出时变曲线 (关联强度是变量, 不是固定值)。"""
+    a, b = _two_series(beta=0.5, lag=1, n=200)
+    res = evaluate_pair(a, b, model="rolling_corr", max_lag=5)
+    assert "curve" in res and len(res["curve"]) >= 10
+    assert "mean_corr" in res["params"] and "std" in res["params"]
+    assert all(0 <= abs(p["corr"]) <= 1 for p in res["curve"])
+
+
+def test_regime_shift_detects_reversal():
+    """构造前后两段符号相反的关系, 应检出 reverse 突变。"""
+    import random
+    from datetime import datetime, timedelta, timezone
+    rng = random.Random(11)
+    a, b = {}, {}
+    pa = pb = 100.0
+    dates = []
+    day = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    for i in range(120):
+        dates.append(day.strftime("%Y-%m-%d"))
+        day += timedelta(days=1)
+    for i, d in enumerate(dates):
+        ra = rng.gauss(0, 0.01)
+        pa *= (1 + ra)
+        a[d] = pa
+        beta = 0.6 if i < 60 else -0.6  # 前段正相关, 后段负相关
+        rb = rng.gauss(0, 0.01) + beta * ra
+        pb *= (1 + rb)
+        b[d] = pb
+    res = evaluate_pair(a, b, model="regime_shift", max_lag=5)
+    assert res["metrics"]["shift_type"] in ("reverse", "weaken")
+    assert res["params"]["break_date"] is not None
+
+
+def test_event_study_finds_events():
+    a, b = _two_series(beta=0.7, lag=1, n=200)
+    res = evaluate_pair(a, b, model="event_study", max_lag=5)
+    assert res["metrics"]["event_count"] > 0
+    assert "hit_rate" in res["metrics"]
+
+
+def test_self_corr_basic():
+    from reserve.relations.engine import self_corr
+    a, _ = _two_series(beta=0.5, lag=1, n=150)
+    sc = self_corr(a, max_lag=5)
+    assert 0.0 <= sc["strength"] <= 1.0
+    assert "lag1_ac" in sc
+
+
+# ---------- 新增: 传导网络 (network) ----------
+
+def test_network_build():
+    from reserve.relations.network import build_network
+    from reserve.relations.demo import build_panel
+    from reserve.relations.engine import evaluate_all
+    panel = build_panel(days=120)
+    results = evaluate_all(panel, model="linear", max_lag=5)
+    net = build_network(results, min_strength=0.02)
+    assert net["nodes"]
+    assert net["edges"]
+    assert "summary" in net
+    assert net["summary"]["node_count"] >= 2
+    assert net["summary"]["top_hubs"]
+
+
+def test_strongest_paths():
+    from reserve.relations.network import strongest_paths
+    # 链式: A -> M -> B, 验证路径还原
+    edges = [
+        {"edge": "A -> M", "from": {"market": "a", "symbol": "A"},
+         "to": {"market": "m", "symbol": "M"}, "strength": 0.6},
+        {"edge": "M -> B", "from": {"market": "m", "symbol": "M"},
+         "to": {"market": "b", "symbol": "B"}, "strength": 0.7},
+        {"edge": "A -> B", "from": {"market": "a", "symbol": "A"},
+         "to": {"market": "b", "symbol": "B"}, "strength": 0.3},
+    ]
+    paths = strongest_paths(edges, source="a.*.*.A.*.*", target="b.*.*.B.*.*",
+                            max_depth=4, min_strength=0.05)
+    assert paths
+    assert paths[0]["length"] >= 1
+
+
+def test_network_summary_shape():
+    from reserve.relations.network import network_summary
+    from reserve.relations.demo import build_panel
+    from reserve.relations.engine import evaluate_all
+    panel = build_panel(days=100)
+    results = evaluate_all(panel, model="linear", max_lag=5)
+    s = network_summary(results, min_strength=0.02)
+    assert s["nodes"] >= 2
+    assert "top_hubs" in s and "top_authorities" in s and "strongest_link" in s
+
+
+# ---------- 新增: 多模型对比 (compare_models) ----------
+
+def test_compare_models_picks_best():
+    from reserve.relations.compare import compare_models
+    a, b = _two_series(beta=0.7, lag=1, n=180)
+    res = compare_models(a, b, models=["linear", "momentum", "exp_decay", "var"])
+    assert res["best"] is not None
+    assert res["ranking"]
+    assert res["best"]["model"] == res["ranking"][0]["model"]
+    assert res["ranking"][0]["score"] >= res["ranking"][-1]["score"]
+
+
+# ---------- 新增: store 序列快照 ----------
+
+def test_store_series_roundtrip(tmp_path):
+    store = RelationStore(tmp_path)
+    store.save_series("equity.CN.SSE.000300.index.1d", {"2026-01-01": 1.0, "2026-01-02": 2.0})
+    assert store.load_series("equity.CN.SSE.000300.index.1d")["2026-01-01"] == 1.0
+    assert "equity.CN.SSE.000300.index.1d" in store.list_series_keys()
+
+
+# ---------- 新增: 新端点 E2E ----------
+
+def test_api_relations_network_endpoint():
+    """传导网络端点: 基于已落盘边数据构建网络。"""
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        os.environ["RELATION_DIR"] = td
+        try:
+            from reserve.relations.demo import build_panel, demo_summary
+            panel = build_panel(days=80)
+            demo_summary(panel, model="linear", max_lag=4, top=3)
+            from fastapi.testclient import TestClient
+            from reserve.fastapi_app import app
+            client = TestClient(app)
+            resp = client.get("/api/v1/relations/network?min_strength=0.02")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["nodes"]
+            assert data["summary"]["node_count"] >= 2
+            assert "clusters" in data
+        finally:
+            os.environ.pop("RELATION_DIR", None)
+
+
+def test_api_relations_compare_models_with_keys():
+    """多模型对比端点: 通过 from_key/to_key 自动取已存序列。"""
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        os.environ["RELATION_DIR"] = td
+        try:
+            from reserve.relations.demo import build_panel, demo_summary
+            panel = build_panel(days=80)
+            demo_summary(panel, model="linear", max_lag=4, top=3)
+            from fastapi.testclient import TestClient
+            from reserve.fastapi_app import app
+            client = TestClient(app)
+            edges = client.get("/api/v1/relations/edges?limit=2").json()["items"]
+            e = edges[0]
+            fk = ".".join([e["from"][k] for k in ("market", "country", "exchange", "symbol", "asset", "timeframe")])
+            tk = ".".join([e["to"][k] for k in ("market", "country", "exchange", "symbol", "asset", "timeframe")])
+            resp = client.post("/api/v1/relations/compare-models",
+                               json={"from_key": fk, "to_key": tk})
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["best"] is not None
+            assert len(data["ranking"]) >= 1
+        finally:
+            os.environ.pop("RELATION_DIR", None)
 
 
 def test_api_relations_evaluate_endpoint():

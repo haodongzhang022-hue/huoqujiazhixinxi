@@ -39,7 +39,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from reserve.schemas import AiFeed, DailyDigest, HumanFeed, PublicHealth, SourceSyncResult
-from reserve.relations.schemas import RelationComparison, RelationEdge, RelationMatrix
+from reserve.relations.schemas import (RelationComparison, RelationEdge, RelationMatrix,
+                                       ModelCompareResult, RelationNetwork)
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB_DIR = ROOT / "web"
@@ -313,6 +314,8 @@ def api_relations_edge(edge: str):
     comparison = store.load_comparison(edge)
     if comparison is not None:
         result["comparison"] = comparison
+    # 附带序列快照 key (供前端多模型对比)
+    result["series_available"] = bool(store.load_series(_dim_key_of(result.get("from") or {})))
     return _clean(result)
 
 
@@ -384,6 +387,108 @@ def api_relations_run_demo(days: int = Query(200, ge=30, le=2000),
     panel = build_panel(days)
     summary = demo_summary(panel, model=model, max_lag=max_lag, top=10)
     return _clean(summary)
+
+
+@app.get("/api/v1/relations/network", response_model=None, tags=["二次整理层"])
+def api_relations_network(min_strength: float = Query(0.1, ge=0.0, le=1.0),
+                          include_comparison: bool = Query(True, description="附带预测能力评价"),
+                          limit: int = Query(2000, ge=1, le=5000)):
+    """传导网络分析: 节点中心性 + 强关联簇 + 网络摘要。
+
+    站在整张关联矩阵之上回答: 谁影响全局 (枢纽)、谁被影响最多 (权威)、
+    哪些品种抱团联动 (簇)、网络密度如何。
+    """
+    from reserve.relations.network import build_network
+    store = _relation_store()
+    edges = store.list_edges()
+    if include_comparison:
+        comps = {c.get("edge"): c for c in store.list_comparisons()}
+        for e in edges:
+            c = comps.get(e.get("edge"))
+            if c:
+                e["comparison"] = {"verdict": c.get("verdict"),
+                                   "metrics": c.get("metrics")}
+    net = build_network(edges, min_strength=min_strength)
+    if limit and len(net["nodes"]) > limit:
+        net["nodes"] = net["nodes"][:limit]
+    return _clean(net)
+
+
+@app.get("/api/v1/relations/paths", response_model=None, tags=["二次整理层"])
+def api_relations_paths(source: Optional[str] = Query(None, description="源维度 key"),
+                        target: Optional[str] = Query(None, description="目标维度 key"),
+                        min_strength: float = Query(0.1, ge=0.0, le=1.0),
+                        max_depth: int = Query(5, ge=2, le=8),
+                        top: int = Query(5, ge=1, le=20)):
+    """传导路径: 从源到目标的强传导链路 (基于有向边强度)。
+
+    不指定 source/target 时自动选「最大枢纽 → 最大权威」。
+    """
+    from reserve.relations.network import strongest_paths
+    store = _relation_store()
+    edges = store.list_edges()
+    paths = strongest_paths(edges, source=source, target=target,
+                            max_depth=max_depth, min_strength=min_strength, top=top)
+    return _clean({"source": source, "target": target, "count": len(paths), "paths": paths})
+
+
+@app.post("/api/v1/relations/compare-models", response_model=None, tags=["二次整理层"])
+def api_relations_compare_models(body: dict):
+    """多模型自动对比: 同一对序列试跑多种模型, 挑预测能力最优者。
+
+    body: {"series_a": {...}, "series_b": {...}, "models": ["linear","var",...](可选),
+           "lag": null, "train_ratio": 0.7, "max_lag": 10,
+           "label_a": "...", "label_b": "...",
+           "from_key": "...", "to_key": "..."}   # 提供 from_key/to_key 时自动取已存序列
+    """
+    from reserve.relations.compare import compare_models
+    series_a = body.get("series_a") or {}
+    series_b = body.get("series_b") or {}
+    if (not series_a or not series_b) and (body.get("from_key") and body.get("to_key")):
+        store = _relation_store()
+        series_a = store.load_series(body["from_key"]) or {}
+        series_b = store.load_series(body["to_key"]) or {}
+    if not series_a or not series_b:
+        raise HTTPException(status_code=400, detail="series_a / series_b 必填 (或提供 from_key/to_key 使用已存序列)")
+    result = compare_models(series_a, series_b, models=body.get("models"),
+                            lag=body.get("lag"),
+                            train_ratio=float(body.get("train_ratio", 0.7)),
+                            max_lag=int(body.get("max_lag", 10)))
+    edge = f"{body.get('label_a', 'A')} -> {body.get('label_b', 'B')}"
+    if result.get("best"):
+        result["best"]["edge"] = edge
+    for c in result.get("comparisons", []):
+        c["edge"] = edge
+    return _clean(result)
+
+
+@app.post("/api/v1/relations/auto-model", response_model=None, tags=["二次整理层"])
+def api_relations_auto_model(body: dict):
+    """对整条边自动选最优模型 (供批量/调度用)。
+
+    body: {"series_a": {...}, "series_b": {...}, "label_a": "...", "label_b": "...",
+           "max_lag": 10, "train_ratio": 0.7, "from_key": "...", "to_key": "..."}
+    返回: {best_model, comparison, ranking} (只保留最优模型的预测曲线)。
+    """
+    from reserve.relations.compare import compare_models
+    series_a = body.get("series_a") or {}
+    series_b = body.get("series_b") or {}
+    if (not series_a or not series_b) and (body.get("from_key") and body.get("to_key")):
+        store = _relation_store()
+        series_a = store.load_series(body["from_key"]) or {}
+        series_b = store.load_series(body["to_key"]) or {}
+    if not series_a or not series_b:
+        raise HTTPException(status_code=400, detail="series_a / series_b 必填 (或提供 from_key/to_key 使用已存序列)")
+    result = compare_models(series_a, series_b, lag=body.get("lag"),
+                            train_ratio=float(body.get("train_ratio", 0.7)),
+                            max_lag=int(body.get("max_lag", 10)))
+    best = result.get("best")
+    edge = f"{body.get('label_a', 'A')} -> {body.get('label_b', 'B')}"
+    if best:
+        best["edge"] = edge
+    return _clean({"best_model": best.get("model") if best else None,
+                   "best": best, "ranking": result.get("ranking", [])})
+
 
 
 # ---------------- 兼容既有 REST API ----------------

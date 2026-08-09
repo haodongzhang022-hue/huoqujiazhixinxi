@@ -6,7 +6,7 @@
   {
     "edge": "A -> B",
     "direction": "A -> B",
-    "model": "correlation | lead_lag | vol_spillover | linear | momentum | exp_decay | var",
+    "model": "correlation | lead_lag | vol_spillover | linear | momentum | exp_decay | var | rolling_corr | regime_shift | event_study | self_corr",
     "params": {...},                      # 模型参数 (拟合结果)
     "strength": 0.73,                     # 归一化影响强度 0~1 (方向: A 对 B 的影响)
     "sign": +1 | -1,                      # 正/负相关方向
@@ -25,6 +25,10 @@
   momentum       : 动量扩散 B_t = a + b*A_(t-lag) + c*B_(t-1) (自回归+扩散)
   exp_decay      : 指数衰减加权影响 (近期影响大, 远期衰减)
   var            : 双变量向量自回归 (VAR(1)) -> 脉冲响应/格兰杰因果
+  rolling_corr   : 滚动相关 —— 关联强度随时间的"变量"曲线 (回答"大多数时候可能是变量")
+  regime_shift   : 结构突变/区间检测 —— 关联关系是否随时间发生切换 (强化/反转/消失)
+  event_study    : 事件研究 —— A 发生异常波动后, B 在事件窗口内的反应 (事件驱动传导)
+  self_corr      : 自相关 —— 序列自身的动量/均值回归特性 (自身影响, 用于识别"自己影响自己")
 
 所有模型都是**方向敏感**的: 计算 A→B 与 B→A 时 A/B 互换、滞后方向互换。
 """
@@ -35,7 +39,8 @@ import math
 import statistics
 from datetime import datetime, timezone
 
-MODELS = ["correlation", "lead_lag", "vol_spillover", "linear", "momentum", "exp_decay", "var"]
+MODELS = ["correlation", "lead_lag", "vol_spillover", "linear", "momentum", "exp_decay", "var",
+          "rolling_corr", "regime_shift", "event_study", "self_corr"]
 
 
 def _now() -> str:
@@ -226,6 +231,241 @@ def _tanh_norm(x: float, scale: float = 1.0) -> float:
     return abs(math.tanh(x / scale))
 
 
+def rolling_corr(series_a: dict, series_b: dict, window: int = 20, max_lag: int = 5) -> dict:
+    """滚动相关 —— 关联强度随时间的「变量」曲线 (回答 ISSUE 原文: 大多数时候可能是变量)。
+
+    在滑动窗口内计算 Pearson 相关 (带领先滞后优化), 输出:
+      curve: [{date, corr, strength}...]   # 逐窗口的时变关联
+      mean / std / min / max / trend      # 汇总: 变量有多大、趋势如何
+      strength: 取 |平均相关| (兼顾整体强度) 并与变量稳定性结合
+      sign / lag / stability
+    """
+    dates = sorted(set(series_a) & set(series_b))
+    n = len(dates)
+    if n < window + 5:
+        return {"curve": [], "mean": 0.0, "std": 0.0, "min": 0.0, "max": 0.0,
+                "trend": 0.0, "strength": 0.0, "sign": 0, "lag": 0, "stability": 0.0,
+                "window": window, "sample_size": n}
+    ra = returns(series_a)
+    rb = returns(series_b)
+    curve = []
+    for i in range(n - window + 1):
+        win_a = {d: ra[d] for d in dates[i:i + window] if d in ra}
+        win_b = {d: rb[d] for d in dates[i:i + window] if d in rb}
+        best = 0.0
+        best_lag = 0
+        for lag in range(-max_lag, max_lag + 1):
+            pairs = _lagged(win_a, win_b, lag) if lag >= 0 else _lagged(win_b, win_a, -lag)
+            if len(pairs) < 5:
+                continue
+            c = _pearson([p[0] for p in pairs], [p[1] for p in pairs])
+            if abs(c) > abs(best):
+                best, best_lag = c, lag
+        curve.append({"date": dates[i + window - 1], "corr": round(best, 4),
+                      "strength": round(abs(best), 4), "lag": best_lag})
+    corrs = [c["corr"] for c in curve]
+    mean = sum(corrs) / len(corrs)
+    sd = statistics.pstdev(corrs) if len(corrs) > 1 else 0.0
+    trend = 0.0
+    if len(corrs) >= 5:
+        xs = list(range(len(corrs)))
+        _, b, _ = _linear_fit(xs, corrs)
+        trend = round(b, 5)
+    mean_strength = abs(mean)
+    # 变量强度: 均相关强度 + 趋势加分; 但高波动 (std 大) 说明关系不稳定, 折减
+    stability = max(0.0, min(1.0, 1.0 - sd / max(abs(mean), 0.05) * 0.5))
+    strength = min(1.0, mean_strength + abs(trend) * 2.0)
+    return {"curve": curve, "mean": round(mean, 4), "std": round(sd, 4),
+            "min": round(min(corrs), 4), "max": round(max(corrs), 4),
+            "trend": trend, "strength": min(1.0, strength), "sign": 1 if mean >= 0 else -1,
+            "lag": curve[-1]["lag"] if curve else 0, "stability": round(stability, 4),
+            "window": window, "sample_size": n}
+
+
+def regime_shift(series_a: dict, series_b: dict, window: int = 20, min_regime: int = 3) -> dict:
+    """结构突变 / 区间检测 —— 关联关系是否随时间切换 (强化 / 反转 / 消失)。
+
+    把全样本切成前后两段 (支持多段: 递归二分), 对比两段的相关系数:
+      - 同向且增强   -> "strengthen" (关系强化)
+      - 同向但减弱   -> "weaken"    (关系弱化)
+      - 符号反转     -> "reverse"   (关系反转)
+      - 一段无信号   -> "appear" / "disappear" (关系出现 / 消失)
+    输出 break_date(突变点) / shift_type / delta / strength 等。
+    """
+    dates = sorted(set(series_a) & set(series_b))
+    n = len(dates)
+    if n < window * 2 + 4:
+        return {"break_date": None, "shift_type": "none", "delta": 0.0, "pre_corr": 0.0,
+                "post_corr": 0.0, "strength": 0.0, "sign": 0, "lag": 0,
+                "stability": 0.0, "sample_size": n}
+    ra = returns(series_a)
+    rb = returns(series_b)
+
+    def _seg_corr(seg_dates):
+        pairs = [(ra[d], rb[d]) for d in seg_dates if d in ra and d in rb]
+        if len(pairs) < 5:
+            return 0.0, 0
+        xs = [p[0] for p in pairs]
+        ys = [p[1] for p in pairs]
+        c = _pearson(xs, ys)
+        # 段内领先滞后 (符号一致时用绝对值最大)
+        best = c
+        best_lag = 0
+        for lag in range(-max(1, window // 4), max(1, window // 4) + 1):
+            p2 = _lagged(ra, rb, lag) if lag >= 0 else _lagged(rb, ra, -lag)
+            p2 = [(x, y) for x, y in p2 if True]
+            if len(p2) >= 5:
+                c2 = _pearson([x for x, _ in p2], [y for _, y in p2])
+                if abs(c2) > abs(best):
+                    best, best_lag = c2, lag
+        return best, best_lag
+
+    best_split = None
+    best_delta = -1.0
+    for split in range(window, n - window + 1):
+        pre = dates[:split]
+        post = dates[split:]
+        if len(pre) < 5 or len(post) < 5:
+            continue
+        c_pre, _ = _seg_corr(pre)
+        c_post, _ = _seg_corr(post)
+        delta = abs(c_post - c_pre)
+        if delta > best_delta:
+            best_delta = delta
+            best_split = (split, c_pre, c_post)
+    if best_split is None:
+        return {"break_date": None, "shift_type": "none", "delta": 0.0, "pre_corr": 0.0,
+                "post_corr": 0.0, "strength": 0.0, "sign": 0, "lag": 0,
+                "stability": 0.0, "sample_size": n}
+    split, c_pre, c_post = best_split
+    break_date = dates[split]
+    delta = c_post - c_pre
+    same_sign = (c_pre >= 0) == (c_post >= 0)
+    if abs(c_pre) < 0.05 and abs(c_post) < 0.05:
+        shift_type = "none"
+    elif abs(c_pre) < 0.05 and abs(c_post) >= 0.05:
+        shift_type = "appear"
+    elif abs(c_pre) >= 0.05 and abs(c_post) < 0.05:
+        shift_type = "disappear"
+    elif same_sign and abs(c_post) > abs(c_pre) * 1.3:
+        shift_type = "strengthen"
+    elif same_sign:
+        shift_type = "weaken"
+    else:
+        shift_type = "reverse"
+    sign = 1 if c_post >= 0 else -1
+    strength = min(1.0, abs(c_post) + abs(delta) * 0.6)
+    stability = max(0.0, min(1.0, 1.0 - abs(delta) / max(max(abs(c_pre), abs(c_post), 0.05), 1e-9) * 0.5))
+    return {"break_date": break_date, "shift_type": shift_type, "delta": round(delta, 4),
+            "pre_corr": round(c_pre, 4), "post_corr": round(c_post, 4),
+            "strength": min(1.0, strength), "sign": sign, "lag": 0,
+            "stability": round(stability, 4), "sample_size": n}
+
+
+def event_study(series_a: dict, series_b: dict, window: int = 5, threshold: float = 2.0) -> dict:
+    """事件研究 —— A 发生异常波动后, B 在事件窗口内的反应 (事件驱动传导)。
+
+    1) 找 A 的异常事件日: |A 收益率| > threshold × 滚动标准差 (可选方向过滤)
+    2) 统计事件后 B 的平均异常反应 (相对 B 自身滚动均值的 z-score)
+    3) 输出: 事件数 / 平均反应 / 命中率 (B 同向反应比例) / 事件窗口曲线
+    """
+    dates = sorted(set(series_a) & set(series_b))
+    n = len(dates)
+    if n < 30:
+        return {"events": [], "event_count": 0, "avg_response": 0.0, "hit_rate": 0.0,
+                "strength": 0.0, "sign": 0, "lag": 0, "stability": 0.0, "sample_size": n}
+    ra = returns(series_a)
+    rb = returns(series_b)
+    a_vals = [ra[d] for d in dates if d in ra]
+    mu_a = statistics.fmean(a_vals)
+    sd_a = statistics.pstdev(a_vals) if len(a_vals) > 1 else 1e-9
+    # B 滚动均值/标准差 (用于标准化事件后反应)
+    b_vals = [rb[d] for d in dates if d in rb]
+    mu_b = statistics.fmean(b_vals)
+    sd_b = statistics.pstdev(b_vals) if len(b_vals) > 1 else 1e-9
+    events = []
+    for i, d in enumerate(dates):
+        if d not in ra or d not in rb:
+            continue
+        z_a = abs(ra[d] - mu_a) / max(sd_a, 1e-9)
+        if z_a < threshold:
+            continue
+        # 事件窗口: 事件后 1..window 天 B 的累积反应
+        resp = []
+        for w in range(1, window + 1):
+            j = i + w
+            if j < len(dates) and dates[j] in rb:
+                resp.append((rb[dates[j]] - mu_b) / max(sd_b, 1e-9))
+        if not resp:
+            continue
+        cum = sum(resp) / len(resp)
+        events.append({"date": d, "z_a": round(z_a, 3), "cum_response": round(cum, 4),
+                       "direction": "up" if ra[d] >= mu_a else "down"})
+    if len(events) < 2:
+        return {"events": events, "event_count": len(events), "avg_response": 0.0,
+                "hit_rate": 0.0, "strength": 0.0, "sign": 0, "lag": 1,
+                "stability": 0.0, "sample_size": n}
+    avg = statistics.fmean([e["cum_response"] for e in events])
+    # 命中率: 同符号 (A 向上 -> B 也向上) 的比例
+    hits = 0
+    tot = 0
+    for e in events:
+        if e["direction"] == "up" and e["cum_response"] > 0:
+            hits += 1
+            tot += 1
+        elif e["direction"] == "down" and e["cum_response"] < 0:
+            hits += 1
+            tot += 1
+        elif e["cum_response"] != 0:
+            tot += 1
+    hit_rate = hits / tot if tot else 0.0
+    strength = min(1.0, abs(avg) * 0.8 + hit_rate * 0.4)
+    return {"events": events, "event_count": len(events), "avg_response": round(avg, 4),
+            "hit_rate": round(hit_rate, 4), "strength": min(1.0, strength),
+            "sign": 1 if avg >= 0 else -1, "lag": 1,
+            "stability": round(min(1.0, hit_rate / 0.7), 4), "sample_size": n}
+
+
+def self_corr(series: dict, max_lag: int = 10) -> dict:
+    """自相关 —— 序列自身的动量/均值回归特性 (识别"自己影响自己")。
+
+    输出各滞后期的自相关系数, 以及最强自相关滞后:
+      lag1_ac / half_life_est(自相关半衰期) / mean_reverting(是否均值回归: lag1<0)
+    """
+    dates = sorted(series)
+    n = len(dates)
+    if n < 10:
+        return {"lag1_ac": 0.0, "best_lag": 0, "best_ac": 0.0, "half_life_est": None,
+                "mean_reverting": False, "strength": 0.0, "sign": 0, "lag": 0,
+                "stability": 0.0, "sample_size": n}
+    r = returns(series)
+    vals = [r[d] for d in sorted(r)]
+    acs = {}
+    for lag in range(1, max_lag + 1):
+        xs = vals[:-lag] if lag else vals
+        ys = vals[lag:]
+        if len(xs) < 5:
+            continue
+        acs[lag] = _pearson(xs, ys)
+    if not acs:
+        return {"lag1_ac": 0.0, "best_lag": 0, "best_ac": 0.0, "half_life_est": None,
+                "mean_reverting": False, "strength": 0.0, "sign": 0, "lag": 0,
+                "stability": 0.0, "sample_size": n}
+    lag1 = acs.get(1, 0.0)
+    best_lag = max(acs, key=lambda k: abs(acs[k]))
+    best_ac = acs[best_lag]
+    half_life = None
+    if 0 < lag1 < 0.999:
+        half_life = round(math.log(0.5) / math.log(lag1), 2)
+    mean_reverting = lag1 < 0
+    return {"lag1_ac": round(lag1, 4), "best_lag": best_lag, "best_ac": round(best_ac, 4),
+            "half_life_est": half_life, "mean_reverting": bool(mean_reverting),
+            "strength": min(1.0, abs(best_ac)), "sign": 1 if best_ac >= 0 else -1,
+            "lag": best_lag, "stability": round(max(0.0, 1.0 - abs(lag1)), 4),
+            "sample_size": n}
+
+
+
 def evaluate_pair(series_a: dict, series_b: dict, model: str = "linear",
                   max_lag: int = 10, lag: int | None = None) -> dict:
     """评估一条有向边 A→B (A 影响 B)。
@@ -350,6 +590,49 @@ def evaluate_pair(series_a: dict, series_b: dict, model: str = "linear",
                            "metrics": {"incremental_r2": round(inc, 4),
                                        "granger_style": bool(inc > 0.01)}})
             result["strength"] = min(1.0, inc * 4 + abs(r2_full) * 0.8)
+
+    elif model == "rolling_corr":
+        window = max(10, min(60, n // 8))
+        rc = rolling_corr(series_a, series_b, window=window, max_lag=min(5, max_lag))
+        result.update({"lag": rc["lag"], "sign": rc["sign"], "strength": rc["strength"],
+                       "stability": rc["stability"],
+                       "params": {"window": window, "mean_corr": rc["mean"], "std": rc["std"],
+                                  "min": rc["min"], "max": rc["max"], "trend": rc["trend"]},
+                       "metrics": {"mean_corr": rc["mean"], "corr_std": rc["std"], "trend": rc["trend"]},
+                       "curve": rc["curve"]})
+
+    elif model == "regime_shift":
+        window = max(10, min(40, n // 10))
+        rs = regime_shift(series_a, series_b, window=window)
+        result.update({"lag": rs["lag"], "sign": rs["sign"], "strength": rs["strength"],
+                       "stability": rs["stability"],
+                       "params": {"break_date": rs["break_date"], "shift_type": rs["shift_type"],
+                                  "delta": rs["delta"], "pre_corr": rs["pre_corr"],
+                                  "post_corr": rs["post_corr"]},
+                       "metrics": {"shift_type": rs["shift_type"], "delta": rs["delta"],
+                                   "pre_corr": rs["pre_corr"], "post_corr": rs["post_corr"],
+                                   "break_date": rs["break_date"]}})
+
+    elif model == "event_study":
+        es = event_study(series_a, series_b, window=5, threshold=2.0)
+        result.update({"lag": es["lag"], "sign": es["sign"], "strength": es["strength"],
+                       "stability": es["stability"],
+                       "params": {"window": 5, "threshold": 2.0, "event_count": es["event_count"],
+                                  "avg_response": es["avg_response"], "hit_rate": es["hit_rate"]},
+                       "metrics": {"event_count": es["event_count"],
+                                   "avg_response": es["avg_response"], "hit_rate": es["hit_rate"]},
+                       "events": es["events"]})
+
+    elif model == "self_corr":
+        # 自相关: 评估 B 自身的动量/均值回归 (A 不起作用, 但保留 A→B 契约)
+        sc = self_corr(series_b, max_lag=max_lag)
+        result.update({"lag": sc["lag"], "sign": sc["sign"], "strength": sc["strength"],
+                       "stability": sc["stability"],
+                       "params": {"lag1_ac": sc["lag1_ac"], "best_lag": sc["best_lag"],
+                                  "best_ac": sc["best_ac"], "half_life_est": sc["half_life_est"],
+                                  "mean_reverting": sc["mean_reverting"]},
+                       "metrics": {"lag1_ac": sc["lag1_ac"], "best_ac": sc["best_ac"],
+                                   "mean_reverting": sc["mean_reverting"]}})
 
     else:
         raise ValueError(f"unknown model: {model}")

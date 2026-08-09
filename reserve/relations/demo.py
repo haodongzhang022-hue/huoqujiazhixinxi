@@ -145,6 +145,10 @@ def demo_summary(panel: dict, model: str = "linear", max_lag: int = 10,
     store.save_matrix(matrix)
     print(f"✅ 关联矩阵: {len(matrix['dimensions'])} 个维度, {matrix['pair_count']} 条有向边 (两两双向, 排除自环)")
 
+    # 1.5) 序列快照 (供前端/API 实时多模型对比)
+    for k, series in panel.items():
+        store.save_series(k, series)
+
     # 2) 全两两评估
     results = evaluate_all(panel, model=model, max_lag=max_lag)
     for r in results:
@@ -176,6 +180,20 @@ def demo_summary(panel: dict, model: str = "linear", max_lag: int = 10,
                               key=lambda c: -(c["metrics"].get("r2") or 0))[:top],
         "model": model,
     }
+    # 5) 网络分析 (站在整张矩阵之上的全局视角)
+    try:
+        from reserve.relations.network import build_network, network_summary
+        net = build_network(results, min_strength=0.03)
+        summary["network"] = {
+            "summary": net["summary"],
+            "nodes": net["nodes"],
+            "clusters": net["clusters"],
+        }
+        summary["top_hubs"] = [{"key": n["key"], "hub_score": n["hub_score"],
+                                 "out_strength": n["out_strength"]}
+                                for n in net["summary"]["top_hubs"]]
+    except Exception:
+        pass
     if out:
         p = store.root / "demo-summary.json"
         p.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -187,7 +205,12 @@ def main():
     ap = argparse.ArgumentParser(description="二次整理层演示 (python -m reserve.relations.demo)")
     ap.add_argument("--days", type=int, default=260)
     ap.add_argument("--model", default="linear", choices=["correlation", "lead_lag", "vol_spillover",
-                                                          "linear", "momentum", "exp_decay", "var"])
+                                                          "linear", "momentum", "exp_decay", "var",
+                                                          "rolling_corr", "regime_shift", "event_study"])
+    ap.add_argument("--compare-models", action="store_true",
+                    help="每条边额外跑多模型对比, 输出最优预测模型")
+    ap.add_argument("--self-corr", action="store_true",
+                    help="额外输出每个维度自身的自相关特性")
     ap.add_argument("--max-lag", type=int, default=10)
     ap.add_argument("--top", type=int, default=10)
     ap.add_argument("--out", action="store_true", help="落盘 demo-summary.json")
@@ -218,8 +241,27 @@ def main():
     for c in summary["comparisons"]:
         verdict_dist[c["verdict"]] = verdict_dist.get(c["verdict"], 0) + 1
     print(f"\n📈 预测能力分布: {verdict_dist}")
+
+    # 网络视角输出
+    if "network" in summary:
+        s = summary["network"]["summary"]
+        print(f"\n🕸️ 传导网络: {s['node_count']} 节点 · {s['edge_count']} 边 · "
+              f"密度 {s['density']} · {s['cluster_count']} 个强关联簇")
+        hubs = s["top_hubs"][:3]
+        if hubs:
+            hub_str = ", ".join(f"{h['key']}({h['hub_score']:.2f})" for h in hubs)
+            print(f"   🧭 最强枢纽(影响源): {hub_str}")
+        auths = s["top_authorities"][:3]
+        if auths:
+            auth_str = ", ".join(f"{a['key']}({a['authority_score']:.2f})" for a in auths)
+            print(f"   🎯 最强权威(被影响): {auth_str}")
+        if summary["network"]["clusters"]:
+            cl = summary["network"]["clusters"][0]
+            print(f"   💠 最大联动簇: {cl['label']} (强度 {cl['total_strength']})")
+
     print("\n💡 结论: 强/良好边可直接用于策略或自动化触发; weak/insufficient 边进迭代队列,"
-          "\n   通过增加样本/换模型/引入宏观因子持续逼近真实传导。")
+          "\n   通过增加样本/换模型(compare-models 自动择优)/引入宏观因子持续逼近真实传导;",
+          "\n   网络视角(hub/簇/路径)用于识别全局影响源与联动板块。")
 
 
 if __name__ == "__main__":
