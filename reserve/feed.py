@@ -353,7 +353,17 @@ def _load_adapter_items() -> list[dict]:
 
     覆盖: cnb / github / arxiv / hackernews / polymarket / rss。
     缓存由 reserve.sources --fetch 或 POST /api/v1/sources/fetch 生成。
+    优先级: LanceDB source_items 表 (ISSUE #5) > JSON 缓存。
     """
+    # 优先读 LanceDB (数据已按时间/功能排布入库)
+    try:
+        store = ReserveStore()
+        rows = store.items_query(limit=100000)
+        if rows:
+            return [_item_row_to_item(r) for r in rows]
+    except Exception:
+        pass
+
     items: list[dict] = []
     if not SOURCES_CACHE_DIR.exists():
         return items
@@ -367,6 +377,41 @@ def _load_adapter_items() -> list[dict]:
             if it:
                 items.append(it)
     return items
+
+
+def _item_row_to_item(row: dict) -> dict:
+    """LanceDB source_items 表行 -> 统一 Item (对齐 _adapter_to_item 输出)。"""
+    adapter_id = row.get("source") or ""
+    meta = _ADAPTER_ITEM_META.get(adapter_id)
+    if not meta:
+        return None
+    source, itype, label = meta
+    extra = dict(row.get("extra") or {})
+    title = row.get("title") or ""
+    return {
+        "id": f"{source}:{row.get('item_id') or title}",
+        "type": itype,
+        "source": source,
+        "source_label": label,
+        "title": title,
+        "url": row.get("url") or "",
+        "description": row.get("summary") or "",
+        "summary_zh": row.get("summary") or "",
+        "language": extra.get("language") or "",
+        "stars": int(extra.get("stars") or row.get("score") or 0),
+        "stars_delta_24h": extra.get("stars_delta_24h"),
+        "stars_delta_7d": extra.get("stars_delta_7d"),
+        "is_new": bool(extra.get("is_new_this_week")),
+        "category": row.get("category") or "",
+        "category_decision": extra.get("category_decision") or "",
+        "function_tags": list(row.get("tags") or []),
+        "use_case": None,
+        "review": None,
+        "matched_needs": [],
+        "published_at": row.get("published_at") or row.get("date") or "",
+        "first_seen_at": row.get("first_seen_at") or "",
+        "extra": extra,
+    }
 
 
 def build_human_feed(items: list[dict], date: str, limit: int = 50,
@@ -495,3 +540,40 @@ def get_feed(mode: str = "human", date: str | None = None, limit: int = 50,
                              category=category, decision=decision)
     return build_human_feed(items, date, limit=limit, offset=offset,
                             category=category, decision=decision)
+
+
+def get_items_timeline(date: str | None = None, category: str | None = None,
+                       source: str | None = None, item_type: str | None = None,
+                       tag: str | None = None, limit: int = 200,
+                       offset: int = 0, sort: str = "date_desc",
+                       store: ReserveStore | None = None) -> dict:
+    """多源条目时间线 (ISSUE #5: 数据保存到 LanceDB, 按时间和功能排布)。
+
+    LanceDB source_items 表按 date (采集日期) + category/tags/type/source (功能)
+    排布查询, 供 Web「今日汇总」时间线页签与 REST API 使用。
+
+    例:
+      get_items_timeline()                              # 全部 (按日期倒序)
+      get_items_timeline(date="2026-08-09")             # 某日
+      get_items_timeline(category="papers")             # 论文
+      get_items_timeline(date="2026-08-09", tag="mcp") # 某日某功能
+    """
+    store = store or ReserveStore()
+    rows = store.items_query(date=date, category=category, source=source,
+                             item_type=item_type, tag=tag, limit=limit,
+                             offset=offset, sort=sort)
+    items = [it for it in (_item_row_to_item(r) for r in rows) if it]
+    dates = store.items_dates()
+    return {
+        "mode": "timeline",
+        "generated_at": _now_iso(),
+        "total": len(items),
+        "limit": limit,
+        "offset": offset,
+        "filters": {
+            "date": date, "category": category, "source": source,
+            "item_type": item_type, "tag": tag,
+        },
+        "available_dates": dates[:60],
+        "items": items,
+    }

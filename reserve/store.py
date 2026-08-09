@@ -4,6 +4,8 @@
   - repo_reserve 表 : 仓库主表 (统一 schema + 功能索引 + 三分类 + embedding)
   - repo_snapshots 表: 每日快照 (趋势回溯)
   - needs 表         : 条件触发引擎的未满足需求 (pending_needs)
+  - source_items 表  : 多源每日信息 (ISSUE #5: CNB 新项目/论文/热点/科技进展/预测市场,
+                      数据保存到 LanceDB, 按时间和功能排布, 支持按 date+category/tags 查询)
 
 存储选择 (生产可切换):
   - LANCE_DIR 环境变量 -> LanceDB 目录 (默认 ./reserve_data)
@@ -109,6 +111,35 @@ REPO_SCHEMA = {
 # 全文检索的文本拼接列 (FTS 索引建在这一列)
 FTS_TEXT_COLUMN = "search_text"
 
+# ============================================================
+# 多源每日信息 items 表 (ISSUE #5: 数据保存到 LanceDB, 按时间和功能排布)
+# ============================================================
+# 统一存储 CNB 新项目 / 论文 / 热点 / 科技进展 / 预测市场 / GitHub 快照 等
+# 所有数据源的归一化条目, 支持按日期 (date) 与功能 (category/tags/type) 排布查询。
+ITEMS_SCHEMA = {
+    "item_id": "str",           # 来源内唯一 id
+    "source": "str",            # 数据源 id (cnb/github/arxiv/hackernews/polymarket/rss)
+    "item_type": "str",         # 条目类型 repo/paper/trend/news/cnb-project/prediction
+    "category": "str",          # 功能类别 (repos/papers/news/tech/prediction)
+    "title": "str",
+    "url": "str",
+    "summary": "str",
+    "tags": "list[str]",        # 功能标签
+    "score": "float",           # 热度/重要性分数
+    "published_at": "str",      # 发布时间 (ISO)
+    "date": "str",              # 排布主键: 采集日期 YYYY-MM-DD (按时间排布)
+    "first_seen_at": "str",     # 首次入库时间
+    "updated_at": "str",        # 最后更新时间
+    "extra": "str",             # 扩展字段 JSON 字符串
+}
+# items 表全文检索列
+ITEMS_FTS_COLUMN = "search_text"
+
+
+def table_name_items() -> str:
+    """多源 items 表名 (环境变量可覆盖, 默认 source_items)。"""
+    return os.environ.get("ITEMS_TABLE", "source_items")
+
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -157,6 +188,10 @@ class ReserveStore:
         store.delete_repo(full_name)
         store.snapshot_put(date, rows)     # 每日快照
         store.needs_put(needs) / needs_get()
+        # ISSUE #5: 多源每日信息 (按时间/功能排布)
+        store.upsert_items(items, date)    # 多源条目入库 (按采集日期)
+        store.items_query(date, category, source, tag, limit)  # 按时间+功能查询
+        store.items_count() / store.items_dates() / store.delete_items(date)
     """
 
     def __init__(self, uri: str | None = None):
@@ -167,6 +202,7 @@ class ReserveStore:
         self.repos_name = table_name_repos()
         self.snaps_name = table_name_snapshots()
         self.needs_name = "needs"
+        self.items_name = table_name_items()
 
     # ---------- 表工具 ----------
 
@@ -384,6 +420,189 @@ class ReserveStore:
             return out
         except Exception:
             return []
+
+    # ---------- 多源每日信息 items (ISSUE #5: 数据保存到 LanceDB, 按时间/功能排布) ----------
+
+    def _ensure_items_table(self):
+        """确保 source_items 表存在 (不存在则用 pyarrow schema 建空表)。"""
+        if self.items_name in self.list_tables():
+            return self.db.open_table(self.items_name)
+        schema = _items_arrow_schema()
+        self.db.create_table(self.items_name, schema=schema)
+        return self.db.open_table(self.items_name)
+
+    def _open_items(self):
+        return self.db.open_table(self.items_name)
+
+    def upsert_items(self, items: list[dict], date: str | None = None) -> dict:
+        """多源条目入库 (LanceDB source_items 表, 按采集日期排布)。
+
+        - date: 采集日期 YYYY-MM-DD, 缺省取当前 UTC 日期;
+        - 已存在 (source + item_id + date 相同) 的记录先删后插 (增量更新);
+        - 返回 {"inserted": n, "updated": m, "total": t}。
+        """
+        if not items:
+            return {"inserted": 0, "updated": 0, "total": 0}
+        d = date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        self._ensure_items_table()
+        existing = self._all_item_ids(d)
+        to_insert, to_update = [], []
+        for it in items:
+            row = normalize_item_row(it, date=d)
+            key = (row["source"], row["item_id"])
+            if key in existing:
+                to_update.append(row)
+            else:
+                to_insert.append(row)
+        if to_insert:
+            try:
+                self._open_items().add(to_insert)
+            except Exception as e:
+                print(f"[store] items add error: {e}")
+        for row in to_update:
+            try:
+                self._open_items().delete(
+                    f"source = '{_esc(row['source'])}' AND item_id = '{_esc(row['item_id'])}'"
+                    f" AND date = '{_esc(row['date'])}'"
+                )
+                self._open_items().add([row])
+            except Exception as e:
+                print(f"[store] items update error: {e}")
+        return {"inserted": len(to_insert), "updated": len(to_update),
+                "total": len(to_insert) + len(to_update)}
+
+    def _all_item_ids(self, date: str) -> set[tuple[str, str]]:
+        try:
+            df = self._open_items().search().where(
+                f"date = '{_esc(date)}'", prefilter=True
+            ).limit(100000).to_pandas()
+            return set(zip(df["source"].tolist(), df["item_id"].tolist()))
+        except Exception:
+            return set()
+
+    def items_query(self, date: str | None = None, category: str | None = None,
+                    source: str | None = None, item_type: str | None = None,
+                    tag: str | None = None, limit: int = 200,
+                    offset: int = 0, sort: str = "date_desc") -> list[dict]:
+        """多源条目查询: 按时间 (date) + 功能 (category/tags/type/source) 排布。
+
+        例:
+          items_query(date="2026-08-09")                     # 某日全部
+          items_query(category="papers")                     # 全部论文
+          items_query(date="2026-08-09", tag="mcp")         # 某日带 mcp 标签
+          items_query(source="cnb")                          # 某源全部
+        """
+        try:
+            tbl = self._open_items()
+            conds = []
+            if date:
+                conds.append(f"date = '{_esc(date)}'")
+            if category:
+                conds.append(f"category = '{_esc(category)}'")
+            if source:
+                conds.append(f"source = '{_esc(source)}'")
+            if item_type:
+                conds.append(f"item_type = '{_esc(item_type)}'")
+            if tag:
+                conds.append(f"array_has(tags, '{_esc(tag)}')")
+            where = " AND ".join(conds) if conds else None
+            q = tbl.search()
+            if where:
+                q = q.where(where, prefilter=True)
+            df = q.limit(limit + offset).to_pandas()
+            if offset:
+                df = df.iloc[offset:]
+            if sort == "date_desc":
+                df = df.sort_values("date", ascending=False)
+            elif sort == "score_desc":
+                df = df.sort_values("score", ascending=False)
+            elif sort == "published_desc":
+                df = df.sort_values("published_at", ascending=False)
+            rows = rows_to_dicts(df.to_dict("records"))
+            for r in rows:
+                try:
+                    r["extra"] = json.loads(r.get("extra") or "{}")
+                except Exception:
+                    r["extra"] = {}
+            return rows
+        except Exception as e:
+            print(f"[store] items_query error: {e}")
+            return []
+
+    def items_count(self) -> int:
+        try:
+            return self._open_items().count_rows()
+        except Exception:
+            return 0
+
+    def items_dates(self) -> list[str]:
+        """已入库的日期列表 (按时间排布用, 倒序)。"""
+        try:
+            df = self._open_items().to_pandas()
+            return sorted(df["date"].dropna().unique().tolist(), reverse=True)
+        except Exception:
+            return []
+
+    def delete_items(self, date: str | None = None, source: str | None = None) -> int:
+        """删除某日/某源的多源条目 (date 必填, source 可选)。"""
+        conds = []
+        if date:
+            conds.append(f"date = '{_esc(date)}'")
+        if source:
+            conds.append(f"source = '{_esc(source)}'")
+        if not conds:
+            return 0
+        try:
+            self._open_items().delete(" AND ".join(conds))
+            return 1
+        except Exception as e:
+            print(f"[store] delete_items error: {e}")
+            return 0
+
+
+def normalize_item_row(it: dict, date: str | None = None) -> dict:
+    """多源适配器 item -> ITEMS_SCHEMA 行 (补默认值 + search_text 拼接列)。"""
+    d = date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    published = it.get("published_at") or it.get("published") or ""
+    tags = it.get("tags") or it.get("function_tags") or []
+    extra = it.get("extra") or {}
+    row = {
+        "item_id": str(it.get("item_id") or it.get("id") or ""),
+        "source": str(it.get("source") or "unknown"),
+        "item_type": str(it.get("item_type") or it.get("type") or ""),
+        "category": str(it.get("category") or "other"),
+        "title": str(it.get("title") or ""),
+        "url": str(it.get("url") or ""),
+        "summary": str(it.get("summary") or it.get("description") or ""),
+        "tags": [str(t) for t in tags],
+        "score": float(it.get("score") or 0),
+        "published_at": published,
+        "date": d,
+        "first_seen_at": it.get("first_seen_at") or now_iso(),
+        "updated_at": now_iso(),
+        "extra": json.dumps(extra, ensure_ascii=False),
+    }
+    row[ITEMS_FTS_COLUMN] = " ".join(filter(None, [
+        row["title"], row["summary"], row["source"], row["category"],
+        " ".join(row["tags"]),
+    ])).lower()
+    return row
+
+
+def _items_arrow_schema():
+    """source_items 表的 pyarrow schema (建空表用)。"""
+    fields = []
+    for key, typ in ITEMS_SCHEMA.items():
+        if typ == "list[str]":
+            fields.append(pa.field(key, pa.list_(pa.string())))
+        elif typ == "float":
+            fields.append(pa.field(key, pa.float64()))
+        elif typ == "int":
+            fields.append(pa.field(key, pa.int64()))
+        else:
+            fields.append(pa.field(key, pa.string()))
+    fields.append(pa.field(ITEMS_FTS_COLUMN, pa.string()))
+    return pa.schema(fields)
 
 
 def normalize_repo_row(repo: dict) -> dict:

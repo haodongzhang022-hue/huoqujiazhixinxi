@@ -1,14 +1,150 @@
 {
   "source": "rss",
-  "fetched_at": "2026-08-09T18:47:41.515427+00:00",
+  "fetched_at": "2026-08-09T20:46:49.956684+00:00",
   "count": 10,
   "items": [
+    {
+      "source": "rss",
+      "item_id": "Hacker News RSS-Poland now 6th-largest EU economy, ahead of Switzerland and Belgium",
+      "title": "Poland now 6th-largest EU economy, ahead of Switzerland and Belgium",
+      "url": "https://www.euronews.com/business/2026/08/09/poland-now-sixth-largest-eu-economy-ahead-of-switzerland-and-belgium",
+      "summary": "<p>Article URL: <a href=\"https://www.euronews.com/business/2026/08/09/poland-now-sixth-largest-eu-economy-ahead-of-switzerland-and-belgium\">https://www.euronews.com/business/2026/08/09/poland-now-sixth-largest-eu-economy-ahead-of-switzerland-and-belgium</a></p> <p>Comments URL: <a href=\"https://news.ycombinator.com/item?id=49235323\">https://news.ycombinator.com/item?id=49235323</a></p> <p>Points: 22</p> <p># Comments: 16</p>",
+      "published_at": "Sun, 09 Aug 2026 20:13:38 +0000",
+      "category": "news",
+      "tags": [
+        "Hacker News RSS"
+      ],
+      "score": 0.0,
+      "extra": {
+        "feed": "Hacker News RSS"
+      },
+      "raw": {}
+    },
+    {
+      "source": "rss",
+      "item_id": "Hacker News RSS-Deletes all instances of Microsoft's GDID and prevents minting of new ones",
+      "title": "Deletes all instances of Microsoft's GDID and prevents minting of new ones",
+      "url": "https://github.com/yegors/deGDID",
+      "summary": "<p>Article URL: <a href=\"https://github.com/yegors/deGDID\">https://github.com/yegors/deGDID</a></p> <p>Comments URL: <a href=\"https://news.ycombinator.com/item?id=49235242\">https://news.ycombinator.com/item?id=49235242</a></p> <p>Points: 7</p> <p># Comments: 2</p>",
+      "published_at": "Sun, 09 Aug 2026 20:06:51 +0000",
+      "category": "news",
+      "tags": [
+        "Hacker News RSS"
+      ],
+      "score": 0.0,
+      "extra": {
+        "feed": "Hacker News RSS"
+      },
+      "raw": {}
+    },
+    {
+      "source": "rss",
+      "item_id": "Hacker News RSS-Ransomware gangs skip the CEO, head straight for the 40-something IT manager",
+      "title": "Ransomware gangs skip the CEO, head straight for the 40-something IT manager",
+      "url": "https://www.theregister.com/security/2026/08/09/ransomware-gangs-skip-the-ceo-head-straight-for-the-40-something-it-manager/5284499",
+      "summary": "<p>Article URL: <a href=\"https://www.theregister.com/security/2026/08/09/ransomware-gangs-skip-the-ceo-head-straight-for-the-40-something-it-manager/5284499\">https://www.theregister.com/security/2026/08/09/ransomware-gangs-skip-the-ceo-head-straight-for-the-40-something-it-manager/5284499</a></p> <p>Comments URL: <a href=\"https://news.ycombinator.com/item?id=49234724\">https://news.ycombinator.com/item?id=49234724</a></p> <p>Points: 29</p> <p># Comments: 9</p>",
+      "published_at": "Sun, 09 Aug 2026 19:20:40 +0000",
+      "category": "news",
+      "tags": [
+        "Hacker News RSS"
+      ],
+      "score": 0.0,
+      "extra": {
+        "feed": "Hacker News RSS"
+      },
+      "raw": {}
+    },
+    {
+      "source": "rss",
+      "item_id": "Hacker News RSS-How I use LLMs to learn complex topics",
+      "title": "How I use LLMs to learn complex topics",
+      "url": "https://laurentiugabriel.github.io/blog/articles/how-i-use-llms-to-learn/",
+      "summary": "<p>Article URL: <a href=\"https://laurentiugabriel.github.io/blog/articles/how-i-use-llms-to-learn/\">https://laurentiugabriel.github.io/blog/articles/how-i-use-llms-to-learn/</a></p> <p>Comments URL: <a href=\"https://news.ycombinator.com/item?id=49234675\">https://news.ycombinator.com/item?id=49234675</a></p> <p>Points: 114</p> <p># Comments: 58</p>",
+      "published_at": "Sun, 09 Aug 2026 19:16:49 +0000",
+      "category": "news",
+      "tags": [
+        "Hacker News RSS"
+      ],
+      "score": 0.0,
+      "extra": {
+        "feed": "Hacker News RSS"
+      },
+      "raw": {}
+    },
+    {
+      "source": "rss",
+      "item_id": "Hacker News RSS-A zero-dependency, ultra-lightweight database time machine for SQLite",
+      "title": "A zero-dependency, ultra-lightweight database time machine for SQLite",
+      "url": "https://github.com/nsrht/time-travel-sqlite-debugger",
+      "summary": "<p>Article URL: <a href=\"https://github.com/nsrht/time-travel-sqlite-debugger\">https://github.com/nsrht/time-travel-sqlite-debugger</a></p> <p>Comments URL: <a href=\"https://news.ycombinator.com/item?id=49234506\">https://news.ycombinator.com/item?id=49234506</a></p> <p>Points: 16</p> <p># Comments: 2</p>",
+      "published_at": "Sun, 09 Aug 2026 18:59:53 +0000",
+      "category": "news",
+      "tags": [
+        "Hacker News RSS"
+      ],
+      "score": 0.0,
+      "extra": {
+        "feed": "Hacker News RSS"
+      },
+      "raw": {}
+    },
+    {
+      "source": "rss",
+      "item_id": "Hacker News RSS-Plug-In Solar Panels Starting to Sprout in U.S. Backyards",
+      "title": "Plug-In Solar Panels Starting to Sprout in U.S. Backyards",
+      "url": "https://www.nytimes.com/2026/07/31/business/energy-environment/plug-in-balcony-solar.html",
+      "summary": "<p>Article URL: <a href=\"https://www.nytimes.com/2026/07/31/business/energy-environment/plug-in-balcony-solar.html\">https://www.nytimes.com/2026/07/31/business/energy-environment/plug-in-balcony-solar.html</a></p> <p>Comments URL: <a href=\"https://news.ycombinator.com/item?id=49234393\">https://news.ycombinator.com/item?id=49234393</a></p> <p>Points: 41</p> <p># Comments: 23</p>",
+      "published_at": "Sun, 09 Aug 2026 18:51:57 +0000",
+      "category": "news",
+      "tags": [
+        "Hacker News RSS"
+      ],
+      "score": 0.0,
+      "extra": {
+        "feed": "Hacker News RSS"
+      },
+      "raw": {}
+    },
+    {
+      "source": "rss",
+      "item_id": "Hacker News RSS-Saying No",
+      "title": "Saying No",
+      "url": "https://rozumem.xyz/posts/19",
+      "summary": "<p>Article URL: <a href=\"https://rozumem.xyz/posts/19\">https://rozumem.xyz/posts/19</a></p> <p>Comments URL: <a href=\"https://news.ycombinator.com/item?id=49234379\">https://news.ycombinator.com/item?id=49234379</a></p> <p>Points: 64</p> <p># Comments: 53</p>",
+      "published_at": "Sun, 09 Aug 2026 18:51:06 +0000",
+      "category": "news",
+      "tags": [
+        "Hacker News RSS"
+      ],
+      "score": 0.0,
+      "extra": {
+        "feed": "Hacker News RSS"
+      },
+      "raw": {}
+    },
+    {
+      "source": "rss",
+      "item_id": "Hacker News RSS-If experience is the goal, then you always win",
+      "title": "If experience is the goal, then you always win",
+      "url": "https://www.startingfromnix.com/p/if-experience-is-the-goal-then-you",
+      "summary": "<p>Article URL: <a href=\"https://www.startingfromnix.com/p/if-experience-is-the-goal-then-you\">https://www.startingfromnix.com/p/if-experience-is-the-goal-then-you</a></p> <p>Comments URL: <a href=\"https://news.ycombinator.com/item?id=49234279\">https://news.ycombinator.com/item?id=49234279</a></p> <p>Points: 33</p> <p># Comments: 4</p>",
+      "published_at": "Sun, 09 Aug 2026 18:42:09 +0000",
+      "category": "news",
+      "tags": [
+        "Hacker News RSS"
+      ],
+      "score": 0.0,
+      "extra": {
+        "feed": "Hacker News RSS"
+      },
+      "raw": {}
+    },
     {
       "source": "rss",
       "item_id": "Hacker News RSS-OpenChamber: An Agentic Development Environment",
       "title": "OpenChamber: An Agentic Development Environment",
       "url": "https://openchamber.dev/",
-      "summary": "<p>Article URL: <a href=\"https://openchamber.dev/\">https://openchamber.dev/</a></p> <p>Comments URL: <a href=\"https://news.ycombinator.com/item?id=49233448\">https://news.ycombinator.com/item?id=49233448</a></p> <p>Points: 23</p> <p># Comments: 5</p>",
+      "summary": "<p>Article URL: <a href=\"https://openchamber.dev/\">https://openchamber.dev/</a></p> <p>Comments URL: <a href=\"https://news.ycombinator.com/item?id=49233448\">https://news.ycombinator.com/item?id=49233448</a></p> <p>Points: 61</p> <p># Comments: 39</p>",
       "published_at": "Sun, 09 Aug 2026 17:27:16 +0000",
       "category": "news",
       "tags": [
@@ -25,144 +161,8 @@
       "item_id": "Hacker News RSS-Ask HN: What are you working on? (August 2026)",
       "title": "Ask HN: What are you working on? (August 2026)",
       "url": "https://news.ycombinator.com/item?id=49233423",
-      "summary": "<p>What are you working on? What have you been curious about lately?</p> <hr> <p>Comments URL: <a href=\"https://news.ycombinator.com/item?id=49233423\">https://news.ycombinator.com/item?id=49233423</a></p> <p>Points: 38</p> <p># Comments: 113</p>",
+      "summary": "<p>What are you working on? What have you been curious about lately?</p> <hr> <p>Comments URL: <a href=\"https://news.ycombinator.com/item?id=49233423\">https://news.ycombinator.com/item?id=49233423</a></p> <p>Points: 95</p> <p># Comments: 369</p>",
       "published_at": "Sun, 09 Aug 2026 17:23:22 +0000",
-      "category": "news",
-      "tags": [
-        "Hacker News RSS"
-      ],
-      "score": 0.0,
-      "extra": {
-        "feed": "Hacker News RSS"
-      },
-      "raw": {}
-    },
-    {
-      "source": "rss",
-      "item_id": "Hacker News RSS-Production Imminent: 40 Solar-Charging Aptera EVs Coming Soon",
-      "title": "Production Imminent: 40 Solar-Charging Aptera EVs Coming Soon",
-      "url": "https://frequal.com/aptera/ProductionImminent.html",
-      "summary": "<p>Article URL: <a href=\"https://frequal.com/aptera/ProductionImminent.html\">https://frequal.com/aptera/ProductionImminent.html</a></p> <p>Comments URL: <a href=\"https://news.ycombinator.com/item?id=49233394\">https://news.ycombinator.com/item?id=49233394</a></p> <p>Points: 28</p> <p># Comments: 15</p>",
-      "published_at": "Sun, 09 Aug 2026 17:19:48 +0000",
-      "category": "news",
-      "tags": [
-        "Hacker News RSS"
-      ],
-      "score": 0.0,
-      "extra": {
-        "feed": "Hacker News RSS"
-      },
-      "raw": {}
-    },
-    {
-      "source": "rss",
-      "item_id": "Hacker News RSS-Show HN: A replayable A2A jury for tracing how agents influence decisions",
-      "title": "Show HN: A replayable A2A jury for tracing how agents influence decisions",
-      "url": "https://github.com/nMaroulis/protolink/tree/main/examples/ai_courtroom",
-      "summary": "<p>Article URL: <a href=\"https://github.com/nMaroulis/protolink/tree/main/examples/ai_courtroom\">https://github.com/nMaroulis/protolink/tree/main/examples/ai_courtroom</a></p> <p>Comments URL: <a href=\"https://news.ycombinator.com/item?id=49233306\">https://news.ycombinator.com/item?id=49233306</a></p> <p>Points: 6</p> <p># Comments: 0</p>",
-      "published_at": "Sun, 09 Aug 2026 17:10:05 +0000",
-      "category": "news",
-      "tags": [
-        "Hacker News RSS"
-      ],
-      "score": 0.0,
-      "extra": {
-        "feed": "Hacker News RSS"
-      },
-      "raw": {}
-    },
-    {
-      "source": "rss",
-      "item_id": "Hacker News RSS-FCC moves to ban Lidar-equipped foreign drones from US",
-      "title": "FCC moves to ban Lidar-equipped foreign drones from US",
-      "url": "https://www.tomshardware.com/tech-industry/drones/fcc-moves-to-ban-lidar-equipped-foreign-drones-from-us-classifies-the-technology-as-military-grade-in-a-proposal-that-could-also-hit-thermal-models-and-the-swarms-used-drone-light-shows",
-      "summary": "<p>Article URL: <a href=\"https://www.tomshardware.com/tech-industry/drones/fcc-moves-to-ban-lidar-equipped-foreign-drones-from-us-classifies-the-technology-as-military-grade-in-a-proposal-that-could-also-hit-thermal-models-and-the-swarms-used-drone-light-shows\">https://www.tomshardware.com/tech-industry/drones/fcc-moves-to-ban-lidar-equipped-foreign-drones-from-us-classifies-the-technology-as-military-grade-in-a-proposal-that-could-also-hit-thermal-models-and-the-swarms-used-drone-light-shows</a></p> <p>Comments URL: <a href=\"https://news.ycombinator.com/item?id=49232857\">https://news.ycombinator.com/item?id=49232857</a></p> <p>Points: 44</p> <p># Comments: 27</p>",
-      "published_at": "Sun, 09 Aug 2026 16:24:59 +0000",
-      "category": "news",
-      "tags": [
-        "Hacker News RSS"
-      ],
-      "score": 0.0,
-      "extra": {
-        "feed": "Hacker News RSS"
-      },
-      "raw": {}
-    },
-    {
-      "source": "rss",
-      "item_id": "Hacker News RSS-An OpenAI Strategist Says AI Labs Should Rival Government Power",
-      "title": "An OpenAI Strategist Says AI Labs Should Rival Government Power",
-      "url": "https://ai-updates.net/an-openai-strategist-says-ai-labs-should-rival-government-power/",
-      "summary": "<p>Article URL: <a href=\"https://ai-updates.net/an-openai-strategist-says-ai-labs-should-rival-government-power/\">https://ai-updates.net/an-openai-strategist-says-ai-labs-should-rival-government-power/</a></p> <p>Comments URL: <a href=\"https://news.ycombinator.com/item?id=49232778\">https://news.ycombinator.com/item?id=49232778</a></p> <p>Points: 12</p> <p># Comments: 13</p>",
-      "published_at": "Sun, 09 Aug 2026 16:18:39 +0000",
-      "category": "news",
-      "tags": [
-        "Hacker News RSS"
-      ],
-      "score": 0.0,
-      "extra": {
-        "feed": "Hacker News RSS"
-      },
-      "raw": {}
-    },
-    {
-      "source": "rss",
-      "item_id": "Hacker News RSS-UnYOLO: Agent credential broker and policy engine for your GitHub account",
-      "title": "UnYOLO: Agent credential broker and policy engine for your GitHub account",
-      "url": "https://unyolo.io/",
-      "summary": "<p>Article URL: <a href=\"https://unyolo.io/\">https://unyolo.io/</a></p> <p>Comments URL: <a href=\"https://news.ycombinator.com/item?id=49232548\">https://news.ycombinator.com/item?id=49232548</a></p> <p>Points: 4</p> <p># Comments: 0</p>",
-      "published_at": "Sun, 09 Aug 2026 15:53:03 +0000",
-      "category": "news",
-      "tags": [
-        "Hacker News RSS"
-      ],
-      "score": 0.0,
-      "extra": {
-        "feed": "Hacker News RSS"
-      },
-      "raw": {}
-    },
-    {
-      "source": "rss",
-      "item_id": "Hacker News RSS-Every fast write moves work somewhere else",
-      "title": "Every fast write moves work somewhere else",
-      "url": "https://www.shayon.dev/post/2026/220/every-fast-write-moves-work-somewhere-else/",
-      "summary": "<p>Article URL: <a href=\"https://www.shayon.dev/post/2026/220/every-fast-write-moves-work-somewhere-else/\">https://www.shayon.dev/post/2026/220/every-fast-write-moves-work-somewhere-else/</a></p> <p>Comments URL: <a href=\"https://news.ycombinator.com/item?id=49232410\">https://news.ycombinator.com/item?id=49232410</a></p> <p>Points: 25</p> <p># Comments: 12</p>",
-      "published_at": "Sun, 09 Aug 2026 15:36:52 +0000",
-      "category": "news",
-      "tags": [
-        "Hacker News RSS"
-      ],
-      "score": 0.0,
-      "extra": {
-        "feed": "Hacker News RSS"
-      },
-      "raw": {}
-    },
-    {
-      "source": "rss",
-      "item_id": "Hacker News RSS-Criminal Deception in Silicon Valley",
-      "title": "Criminal Deception in Silicon Valley",
-      "url": "https://pubsonline.informs.org/doi/full/10.1287/orsc.2024.19981",
-      "summary": "<p>Article URL: <a href=\"https://pubsonline.informs.org/doi/full/10.1287/orsc.2024.19981\">https://pubsonline.informs.org/doi/full/10.1287/orsc.2024.19981</a></p> <p>Comments URL: <a href=\"https://news.ycombinator.com/item?id=49232318\">https://news.ycombinator.com/item?id=49232318</a></p> <p>Points: 118</p> <p># Comments: 52</p>",
-      "published_at": "Sun, 09 Aug 2026 15:26:45 +0000",
-      "category": "news",
-      "tags": [
-        "Hacker News RSS"
-      ],
-      "score": 0.0,
-      "extra": {
-        "feed": "Hacker News RSS"
-      },
-      "raw": {}
-    },
-    {
-      "source": "rss",
-      "item_id": "Hacker News RSS-Human vs. AI – Diff-based line-level provenance for text under agentic editing",
-      "title": "Human vs. AI – Diff-based line-level provenance for text under agentic editing",
-      "url": "https://github.com/eighttrigrams/us-vs-them",
-      "summary": "<p>Article URL: <a href=\"https://github.com/eighttrigrams/us-vs-them\">https://github.com/eighttrigrams/us-vs-them</a></p> <p>Comments URL: <a href=\"https://news.ycombinator.com/item?id=49232300\">https://news.ycombinator.com/item?id=49232300</a></p> <p>Points: 19</p> <p># Comments: 1</p>",
-      "published_at": "Sun, 09 Aug 2026 15:25:29 +0000",
       "category": "news",
       "tags": [
         "Hacker News RSS"

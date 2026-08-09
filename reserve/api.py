@@ -227,6 +227,23 @@ class ReserveAPI(BaseHTTPRequestHandler):
             except Exception as e:
                 return self._send(500, {"error": str(e)})
             return self._send(200, payload)
+        # ---------- v4.1: 多源条目时间线 (ISSUE #5: LanceDB 按时间/功能排布) ----------
+        if path in ("/api/v1/items", "/api/v1/items/timeline"):
+            from reserve.feed import get_items_timeline
+            return self._send(200, _json_clean(get_items_timeline(
+                date=qs.get("date") or None,
+                category=qs.get("category") or None,
+                source=qs.get("source") or None,
+                item_type=qs.get("item_type") or None,
+                tag=qs.get("tag") or None,
+                limit=int(qs.get("limit", 200)),
+                offset=int(qs.get("offset", 0)),
+                sort=qs.get("sort", "date_desc"),
+            )))
+        if path == "/api/v1/items/dates":
+            from reserve.store import ReserveStore
+            store = ReserveStore()
+            return self._send(200, {"dates": store.items_dates(), "total": store.items_count()})
 
         # ---------- v3: Web 静态页面 ----------
         if path == "/" or path == "/index.html":
@@ -325,13 +342,16 @@ class ReserveAPI(BaseHTTPRequestHandler):
             review_action_candidates(repos, fetch_readme=bool(data.get("fetch_readme", True)))
             return self._send(200, {"queued": len([r for r in repos if r.get("review_status")])})
         if path == "/api/v1/sources/fetch":
-            """拉取全部/指定数据源。body: {only: ["cnb", ...]} 可选。"""
+            """拉取全部/指定数据源并写入 LanceDB。body: {only: ["cnb", ...]} 可选。"""
             data = self._read_json()
             only = data.get("only") or data.get("sources") or None
-            from pipeline.adapters import fetch_all
-            results = fetch_all(only=only, write_cache=True)
-            ok = sum(1 for r in results if r.get("ok"))
-            return self._send(200, {"ok": ok, "total": len(results), "results": results})
+            from reserve.sources import fetch_all_to_store
+            out = fetch_all_to_store(only=only)
+            ok = sum(1 for r in out["results"] if r.get("ok"))
+            return self._send(200, {
+                "ok": ok, "total": len(out["results"]),
+                "store": out["store"], "results": out["results"],
+            })
         if path == "/api/v1/sources/enable":
             """启停数据源。body: {source, enabled}。"""
             data = self._read_json()

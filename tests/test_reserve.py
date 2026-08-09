@@ -836,5 +836,128 @@ def test_feed_get_feed_includes_adapters():
     assert d["meta"]["schema_version"] == "1.0"
 
 
+# ============================================================
+# v4.2: 多源条目 LanceDB 入库 (ISSUE #5: 数据保存到 LanceDB, 按时间和功能排布)
+# ============================================================
+
+def test_store_items_upsert_query(tmp_path):
+    """source_items 表: 入库 + 按时间/功能排布查询。"""
+    import os
+    os.environ["LANCE_DIR"] = str(tmp_path)
+    try:
+        from reserve.store import ReserveStore, normalize_item_row
+        store = ReserveStore()
+        items = [
+            {"source": "cnb", "item_id": "o/r1", "title": "o/r1",
+             "category": "repos", "tags": ["mcp"], "score": 10,
+             "published_at": "2026-08-09T00:00:00Z"},
+            {"source": "arxiv", "item_id": "2608.00001", "title": "Paper X",
+             "category": "papers", "tags": ["llm"], "score": 5,
+             "published_at": "2026-08-09T00:00:00Z"},
+            {"source": "cnb", "item_id": "o/r2", "title": "o/r2",
+             "category": "repos", "tags": ["rag"], "score": 20,
+             "published_at": "2026-08-08T00:00:00Z"},
+        ]
+        stats = store.upsert_items(items, date="2026-08-09")
+        assert stats["total"] == 3
+        assert stats["inserted"] == 3
+
+        # 按日期查询
+        rows = store.items_query(date="2026-08-09")
+        assert len(rows) == 3
+        # 按功能类别查询
+        papers = store.items_query(category="papers")
+        assert len(papers) == 1 and papers[0]["title"] == "Paper X"
+        # 按标签查询
+        mcp = store.items_query(tag="mcp")
+        assert len(mcp) == 1 and mcp[0]["item_id"] == "o/r1"
+        # 按源查询
+        cnb = store.items_query(source="cnb")
+        assert len(cnb) == 2
+        # 按热度排序
+        hot = store.items_query(sort="score_desc")
+        assert hot[0]["score"] == 20.0
+        # 日期列表
+        assert "2026-08-09" in store.items_dates()
+        assert store.items_count() == 3
+
+        # 重复入库 -> 更新 (不重复插入)
+        stats2 = store.upsert_items(items[:1], date="2026-08-09")
+        assert stats2["updated"] == 1 and stats2["inserted"] == 0
+        assert store.items_count() == 3
+    finally:
+        os.environ.pop("LANCE_DIR", None)
+
+
+def test_store_items_row_normalization():
+    """normalize_item_row: 字段归一化 + search_text 拼接。"""
+    from reserve.store import normalize_item_row, ITEMS_FTS_COLUMN
+    row = normalize_item_row({
+        "source": "cnb", "item_id": "x", "title": "T", "category": "repos",
+        "tags": ["mcp", "ai"], "score": 3, "extra": {"platform": "cnb"},
+    }, date="2026-08-09")
+    assert row["date"] == "2026-08-09"
+    assert row["tags"] == ["mcp", "ai"]
+    assert row["score"] == 3.0
+    assert "t" in row[ITEMS_FTS_COLUMN] and "mcp" in row[ITEMS_FTS_COLUMN]
+    import json
+    assert json.loads(row["extra"]) == {"platform": "cnb"}
+
+
+def test_sources_fetch_all_to_store(tmp_path):
+    """fetch_all_to_store: 拉取后写入 LanceDB source_items 表。"""
+    import os
+    os.environ["LANCE_DIR"] = str(tmp_path)
+    try:
+        from reserve.sources import fetch_all_to_store
+        # 只拉 cnb (CLI 可用走真实, 否则 demo), 其余源跳过网络
+        out = fetch_all_to_store(only=["cnb"], write_cache=False)
+        assert "results" in out and "store" in out
+        assert out["store"]["table"] == "source_items"
+        from reserve.store import ReserveStore
+        store = ReserveStore()
+        assert store.items_count() >= 1
+    finally:
+        os.environ.pop("LANCE_DIR", None)
+
+
+def test_feed_timeline_from_store(tmp_path):
+    """get_items_timeline: 从 LanceDB 按时间/功能排布读取。"""
+    import os
+    os.environ["LANCE_DIR"] = str(tmp_path)
+    try:
+        from reserve.store import ReserveStore
+        store = ReserveStore()
+        store.upsert_items([
+            {"source": "cnb", "item_id": "o/r1", "title": "o/r1",
+             "category": "repos", "tags": ["mcp"], "score": 10,
+             "published_at": "2026-08-09T00:00:00Z"},
+            {"source": "arxiv", "item_id": "p1", "title": "Paper 1",
+             "category": "papers", "tags": ["llm"], "score": 5,
+             "published_at": "2026-08-09T00:00:00Z"},
+        ], date="2026-08-09")
+        from reserve.feed import get_items_timeline
+        tl = get_items_timeline(category="papers", store=store)
+        assert tl["mode"] == "timeline"
+        assert len(tl["items"]) == 1
+        assert tl["items"][0]["source"] == "papers"
+        assert tl["items"][0]["type"] == "paper"
+        assert tl["available_dates"] == ["2026-08-09"]
+    finally:
+        os.environ.pop("LANCE_DIR", None)
+
+
+def test_api_items_routes_registered():
+    """API 路由: 多源条目时间线端点存在。"""
+    from reserve import api as api_mod
+    src = open(api_mod.__file__, encoding="utf-8").read()
+    for route in ("/api/v1/items", "/api/v1/items/timeline", "/api/v1/items/dates"):
+        assert route in src, f"missing route: {route}"
+    from reserve.fastapi_app import app
+    routes = {getattr(r, "path", "") for r in app.routes}
+    assert "/api/v1/items" in routes
+    assert "/api/v1/items/dates" in routes
+
+
 if __name__ == "__main__":
     sys.exit(main())

@@ -17,6 +17,7 @@ reserve/classifier.py (打分模型 → action/reserve/partial/ignore 三分类 
         │  reserve/embedding.py (本地中英桥接向量化 / API embedding)
         ▼
 LanceDB 储备库 (repo_reserve 表: 功能索引 + 条件判断 + embedding)
+        │  └── source_items 表 (ISSUE #5: 多源每日信息, 按时间/功能排布)
         │
         ├── reserve/search.py  全文/向量/混合检索 ("人找货")
         ├── reserve/trigger.py 条件触发引擎 AUTO/SUGGEST/LOG ("货找货" + needs 双向生长回路)
@@ -304,6 +305,34 @@ score≥4                → reserve (储备索引: 保留链接+功能索引)
 `category_decision`(action/reserve/partial/ignore) / `decision_score` / `decision_reason` /
 `embedding`(vector[384]) / `matched_needs` / `search_text`(FTS 全文检索列)。
 
+### LanceDB 多源信息表 (source_items 表, ISSUE #5)
+
+CNB 新项目 / 论文 / 热点 / 科技进展 / 预测市场 等所有数据源的归一化条目统一入库，
+**数据保存到 LanceDB，按时间 (date) 和功能 (category/tags/type/source) 排布**：
+
+| 字段 | 说明 |
+|---|---|
+| `item_id` + `source` + `date` | 唯一键 (同源同条同日更新不重复插入) |
+| `date` | 采集日期 YYYY-MM-DD (按时间排布) |
+| `category` | 功能类别 repos/papers/news/tech/prediction |
+| `tags` | 功能标签 (mcp/rag/llm/... 按功能排布) |
+| `item_type` | repo/paper/trend/news/cnb-project |
+| `score` / `published_at` / `extra` | 热度 / 发布时间 / 扩展字段 (JSON) |
+
+用法:
+```bash
+python -m reserve.sources --fetch   # 拉取全部源 → 写 JSON 缓存 + 自动入库 LanceDB
+```
+查询 (按时间/功能排布):
+```
+GET /api/v1/items?date=2026-08-09            # 某日全部
+GET /api/v1/items?category=papers             # 全部论文
+GET /api/v1/items?date=2026-08-09&tag=mcp     # 某日某功能标签
+GET /api/v1/items?sort=score_desc             # 按热度排序
+GET /api/v1/items/dates                       # 已入库日期列表
+```
+Web 管理页新增「时间线」页签：按日期分组展示多源条目，支持日期/功能/数据源/标签过滤。
+
 ## 目录结构
 
 ```
@@ -318,7 +347,7 @@ pipeline/
     └── needs.json     pending_needs (可选)
 
 reserve/
-├── store.py           LanceDB 存储层 (repo_reserve / repo_snapshots / needs, 动态向量维度)
+├── store.py           LanceDB 存储层 (repo_reserve / repo_snapshots / needs / source_items, 动态向量维度)
 ├── preprocessor.py    归一化 + 去重
 ├── classifier.py      打分三分类 + 功能索引 (LLM/启发式)
 ├── embedding.py       向量化 (本地中英桥接 / OpenAI 兼容 / Ollama API)

@@ -212,6 +212,42 @@ def api_digest(date: Optional[str] = None):
     })
 
 
+@app.get("/api/v1/items", response_model=None, tags=["对外信息流"])
+@app.get("/api/v1/items/timeline", response_model=None, tags=["对外信息流"])
+def api_items_timeline(
+    date: Optional[str] = Query(None, description="采集日期 YYYY-MM-DD, 缺省全部"),
+    category: Optional[str] = Query(None, description="功能类别 repos/papers/news/tech/prediction"),
+    source: Optional[str] = Query(None, description="数据源 cnb/github/arxiv/hackernews/polymarket/rss"),
+    item_type: Optional[str] = Query(None, description="条目类型 repo/paper/trend/news/cnb-project"),
+    tag: Optional[str] = Query(None, description="功能标签 (如 mcp/rag/agent)"),
+    limit: int = Query(200, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    sort: str = Query("date_desc", pattern="^(date_desc|score_desc|published_desc)$"),
+):
+    """多源条目时间线 (ISSUE #5: 数据保存到 LanceDB, 按时间和功能排布)。
+
+    LanceDB source_items 表, 支持按时间 (date) + 功能 (category/tag/type/source) 排布。
+    例:
+      GET /api/v1/items?date=2026-08-09          # 某日全部
+      GET /api/v1/items?category=papers           # 全部论文
+      GET /api/v1/items?date=2026-08-09&tag=mcp   # 某日某功能
+      GET /api/v1/items?sort=score_desc           # 按热度排序
+    """
+    from reserve.feed import get_items_timeline
+    return _clean(get_items_timeline(
+        date=date, category=category, source=source, item_type=item_type,
+        tag=tag, limit=limit, offset=offset, sort=sort,
+    ))
+
+
+@app.get("/api/v1/items/dates", response_model=None, tags=["对外信息流"])
+def api_items_dates():
+    """已入库多源条目的日期列表 (按时间排布)。"""
+    from reserve.store import ReserveStore
+    store = ReserveStore()
+    return _clean({"dates": store.items_dates(), "total": store.items_count()})
+
+
 @app.post("/api/v1/sync/{source}", response_model=SourceSyncResult, tags=["对外信息流"])
 def api_sync_source(source: str, body: SyncBody | None = None):
     """单数据源手动同步 (ISSUE #5: 多源适配器已接入)。
@@ -259,10 +295,20 @@ def api_sync_source(source: str, body: SyncBody | None = None):
             defaults = cfg.get("defaults", {})
             sc = {**defaults, **(cfg.get("sources", {}).get(adapter_id, {}))}
             res = fetch_one(adapter_id, config=sc, write_cache=True)
+            # ISSUE #5: 同步结果同时写入 LanceDB source_items 表
+            store_note = ""
+            if res["ok"] and res.get("items"):
+                try:
+                    from reserve.store import ReserveStore
+                    store = ReserveStore()
+                    stats = store.upsert_items(res["items"])
+                    store_note = f" | LanceDB 入库 {stats.get('total', 0)} 条"
+                except Exception as e:
+                    store_note = f" | LanceDB 入库失败: {e}"
             return SourceSyncResult(
                 source=source, status="active" if res["ok"] else "error",
                 items=res["count"],
-                message=res.get("error") or f"已拉取 {res['count']} 条 (适配器 {adapter_id})",
+                message=(res.get("error") or f"已拉取 {res['count']} 条 (适配器 {adapter_id})") + store_note,
             )
         except Exception as e:
             return SourceSyncResult(source=source, status="error", items=0, message=str(e))

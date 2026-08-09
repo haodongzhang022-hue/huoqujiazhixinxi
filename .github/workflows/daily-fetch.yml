@@ -32,9 +32,13 @@ jobs:
         run: |
           python -m reserve.self_heal --check-only || true
 
-      - name: 多源聚合拉取 (ISSUE #5: CNB/arXiv/HN/预测市场/RSS)
+      - name: 多源聚合拉取 + 写入 LanceDB (ISSUE #5: CNB/arXiv/HN/预测市场/RSS)
         run: |
           python -m reserve.sources --fetch || true
+
+      - name: 多源条目 LanceDB 入库确认 (数据保存到 LanceDB, 按时间/功能排布)
+        run: |
+          python -c "from reserve.store import ReserveStore; s = ReserveStore(); print('source_items 表条目数:', s.items_count()); print('已入库日期:', s.items_dates())" || true
 
       - name: 采集 (GitHub Search API)
         env:

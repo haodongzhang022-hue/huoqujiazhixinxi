@@ -178,6 +178,32 @@ def digest(items: list[dict] | None = None, refresh: bool = False,
     }
 
 
+def fetch_all_to_store(only: list[str] | None = None, write_cache: bool = True,
+                      date: str | None = None) -> dict:
+    """多源拉取 + 写入 LanceDB (ISSUE #5: 数据保存到 LanceDB, 按时间和功能排布)。
+
+    1. 调 pipeline.adapters.fetch_all 拉取全部启用源 (写 JSON 缓存);
+    2. 把每条 item 归一化后 upsert 进 LanceDB source_items 表 (按采集日期);
+    3. 返回 {"results": [...], "store": {...}}。
+    """
+    results = fetch_all(only=only, write_cache=write_cache)
+    items = []
+    for r in results:
+        if r.get("ok"):
+            items.extend(r.get("items") or [])
+    store_stats = {"inserted": 0, "updated": 0, "total": 0, "table": ""}
+    if items:
+        try:
+            from reserve.store import ReserveStore
+            store = ReserveStore()
+            store_stats = store.upsert_items(items, date=date)
+            store_stats["table"] = store.items_name
+        except Exception as e:
+            print(f"[sources] LanceDB 入库失败: {e}", file=sys.stderr)
+            store_stats["error"] = str(e)
+    return {"results": results, "store": store_stats, "total_items": len(items)}
+
+
 # ============================================================
 # 数据源管理 (增删/启停/配置) —— config/sources.json 热更新
 # ============================================================
@@ -238,10 +264,11 @@ def main() -> int:
         data = list_sources()
     elif args.fetch is not None:
         only = args.fetch if args.fetch else None
-        results = fetch_all(only=only, write_cache=True)
-        ok = sum(1 for r in results if r["ok"])
-        print(f"[sources] 拉取完成: {ok}/{len(results)} 源成功")
-        data = {"results": results}
+        out = fetch_all_to_store(only=only)
+        ok = sum(1 for r in out["results"] if r["ok"])
+        print(f"[sources] 拉取完成: {ok}/{len(out['results'])} 源成功, "
+              f"LanceDB 入库 {out['store'].get('total', 0)} 条")
+        data = out
     elif args.digest:
         data = digest()
     elif args.enable:

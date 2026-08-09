@@ -206,6 +206,58 @@ async function renderDigest(container) {
     `;
 }
 
+/* ---------------- 时间线 (ISSUE #5: LanceDB 按时间/功能排布) ---------------- */
+let tlState = { date: "", category: "", source: "", tag: "", limit: 200, offset: 0 };
+
+async function renderTimeline(container) {
+  const datesRes = await getJSON(`${API}/items/dates`);
+  const dates = datesRes.dates || [];
+  const totalStored = datesRes.total || 0;
+  if (!tlState.date && dates.length) tlState.date = dates[0];
+
+  const params = new URLSearchParams({ limit: tlState.limit, offset: tlState.offset });
+  if (tlState.date) params.set("date", tlState.date);
+  if (tlState.category) params.set("category", tlState.category);
+  if (tlState.source) params.set("source", tlState.source);
+  if (tlState.tag) params.set("tag", tlState.tag);
+
+  const data = await getJSON(`${API}/items?${params}`);
+  const items = data.items || [];
+
+  const dateOptions = dates.map(d => `<option value="${esc(d)}" ${d === tlState.date ? "selected" : ""}>${esc(d)}</option>`).join("");
+  const srcOptions = ["cnb", "github", "arxiv", "hackernews", "polymarket", "rss"]
+    .map(s => `<option value="${s}" ${s === tlState.source ? "selected" : ""}>${esc(s)}</option>`).join("");
+  const catOptions = ["repos", "papers", "news", "tech", "prediction"]
+    .map(c => `<option value="${c}" ${c === tlState.category ? "selected" : ""}>${esc(c)}</option>`).join("");
+
+  const grouped = {};
+  (items || []).forEach(it => {
+    const d = (it.published_at || "").slice(0, 10) || (it.extra || {}).date || tlState.date || "-";
+    (grouped[d] = grouped[d] || []).push(it);
+  });
+  const days = Object.keys(grouped).sort().reverse();
+  const dayHtml = days.map(d => `
+    <div class="panel">
+      <h2>📅 ${esc(d)} <span class="muted">(${grouped[d].length} 条)</span></h2>
+      <div class="item-grid">${grouped[d].map(itemCard).join("")}</div>
+    </div>`).join("") || '<div class="empty">暂无条目, 先运行 python -m reserve.sources --fetch</div>';
+
+  container.innerHTML = `
+    <div class="panel">
+      <h2>🕐 多源信息时间线 <span style="font-size:12px;color:var(--muted)">(ISSUE #5: 数据保存到 LanceDB source_items 表, 按时间 + 功能排布)</span></h2>
+      <p style="font-size:13px;color:var(--muted)">已入库 ${esc(totalStored)} 条 · 可用日期: ${esc(dates.join(", ") || "-")}</p>
+    </div>
+    <div class="toolbar">
+      <label>日期 <select id="tl-date" onchange="tlState.date=this.value;tlState.offset=0;refresh('timeline')"><option value="">全部</option>${dateOptions}</select></label>
+      <label>功能 <select id="tl-category" onchange="tlState.category=this.value;tlState.offset=0;refresh('timeline')"><option value="">全部</option>${catOptions}</select></label>
+      <label>数据源 <select id="tl-source" onchange="tlState.source=this.value;tlState.offset=0;refresh('timeline')"><option value="">全部</option>${srcOptions}</select></label>
+      <label>标签 <input id="tl-tag" placeholder="mcp/rag/llm..." value="${esc(tlState.tag)}" onchange="tlState.tag=this.value;tlState.offset=0;refresh('timeline')"></label>
+      <button class="btn primary" onclick="refresh('timeline')">🔄 刷新</button>
+    </div>
+    ${dayHtml}
+    `;
+}
+
 /* ---------------- 信息流 (人类优先 / AI 优先) ---------------- */
 let feedState = { mode: "human", date: "", category: "", decision: "", limit: 50, offset: 0 };
 
@@ -665,6 +717,7 @@ async function runHeal(checkOnly) {
 const VIEWS = {
   overview: renderOverview,
   digest: renderDigest,
+  timeline: renderTimeline,
   feed: renderFeed,
   repos: renderRepos,
   clusters: renderClusters,
