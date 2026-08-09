@@ -1,4 +1,4 @@
-# 每日采集 + 入库 + 条件触发调度 (参考 wvb-cc-radar daily-fetch)
+# 每日采集 + 入库 + 质量评估 + 自愈合 + 条件触发调度 (参考 wvb-cc-radar daily-fetch)
 # 运行方式: 手动触发 / 定时 (每日 08:00 CST = 00:00 UTC)
 name: reserve-daily
 
@@ -28,6 +28,10 @@ jobs:
         run: |
           pip install -q -r pipeline/requirements.txt
 
+      - name: 健康检查 + 自愈合 (管道自检)
+        run: |
+          python -m reserve.self_heal --check-only || true
+
       - name: 采集 (GitHub Search API)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -48,14 +52,22 @@ jobs:
         run: |
           python -m reserve.ingest --no-readme || python -m reserve.ingest --no-readme --no-llm --no-review
 
+      - name: 质量评估 (生成每日质量报告)
+        run: |
+          python -m reserve.quality --report
+
       - name: 条件触发重匹配 (pending_needs 双向生长回路)
         run: |
           python -m reserve.trigger --rematch || true
 
-      - name: 提交每日快照
+      - name: 自愈合 (自动修复发现的问题, 如快照缺失/索引缺失)
+        run: |
+          python -m reserve.self_heal || true
+
+      - name: 提交每日快照与质量报告
         run: |
           git config user.name "CodeBuddy NPC"
           git config user.email "npc@cnb.cool"
-          git add pipeline/data/snapshots/ reserve_data/ data/ 2>/dev/null || true
+          git add pipeline/data/snapshots/ reserve_data/ data/ config/review_queue.json 2>/dev/null || true
           git commit -m "chore: daily reserve snapshot $(date +%Y-%m-%d)" --allow-empty || true
           git push || true

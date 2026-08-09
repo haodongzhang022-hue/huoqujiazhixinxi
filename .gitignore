@@ -23,3 +23,9 @@ config/llm.json
 
 # 人工审核队列 (运行时生成, 不入库)
 config/review_queue.json
+
+# 质量报告 (运行时生成)
+data/reports/*.json
+
+# 自愈事件日志 (运行时生成)
+data/heal_log.json

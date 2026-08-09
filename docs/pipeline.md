@@ -17,7 +17,10 @@ LanceDB 储备库 (repo_reserve 表: 功能索引 + 条件判断 + embedding)
         │
         ├── reserve/search.py  全文/向量/混合检索 ("人找货")
         ├── reserve/trigger.py 条件触发引擎 AUTO/SUGGEST/LOG ("货找货" + needs 双向生长回路)
-        └── reserve/api.py     REST API (/api/v1/reserve/* + /api/v1/needs)
+        ├── reserve/quality.py 内容质量评估 (快照/储备库/趋势 + 每日质量报告)
+        ├── reserve/self_heal.py 管道自愈合 (健康检查 → 诊断 → 自动修复 → 事件日志)
+        ├── reserve/dashboard.py 内容结构化整理视图 (总览/列表/能力簇/质量/快照/需求/审核)
+        └── reserve/api.py     REST API (/api/v1/reserve/* + /api/v1/needs + /api/v1/quality + /api/v1/health|heal + /api/v1/dashboard/*) + Web 管理页面 (web/)
 ```
 
 ## 快速开始
@@ -75,7 +78,104 @@ curl -X POST http://127.0.0.1:8000/api/v1/reserve/trigger \
   -H "Content-Type: application/json" -d '{"query":"需要 RAG 向量检索能力"}'
 ```
 
+### 7. 质量评估 ("每天获取的内容质量怎么样了")
+
+```bash
+# 今日快照质量
+python -m reserve.quality --snapshot pipeline/data/snapshots/YYYY-MM-DD.json
+# 储备库整体质量
+python -m reserve.quality --store
+# 多日质量趋势
+python -m reserve.quality --trend --days 7
+# 每日综合报告 (快照 + 储备库 + 趋势, 写入 data/reports/)
+python -m reserve.quality --report
+```
+
+### 8. 自愈合 (管道自动修复)
+
+```bash
+# 健康检查 (只检查不修复)
+python -m reserve.self_heal --check-only
+# 自动修复 (快照缺失→重采集, 索引缺失→重建, 临时文件→清理, LLM 不可用→降级)
+python -m reserve.self_heal
+# 查看愈合历史
+python -m reserve.self_heal --log
+```
+
+### 9. Web 管理页面 + 展示 API ("内容整理好显示到页面")
+
+```bash
+python -m reserve.api --port 8000
+# 浏览器打开 http://127.0.0.1:8000/ 即可看到管理台
+# 页面功能: 总览 / 仓库列表 / 能力簇 / 质量评估 / 每日快照 / 需求 / 审核队列 / 自愈中心
+```
+
+结构化展示 API（页面与第三方共用）：
+
+```bash
+curl http://127.0.0.1:8000/api/v1/dashboard/overview       # 总览
+curl "http://127.0.0.1:8000/api/v1/dashboard/repos?decision=action&sort=stars&limit=20"  # 仓库列表
+curl http://127.0.0.1:8000/api/v1/dashboard/clusters       # 能力簇
+curl http://127.0.0.1:8000/api/v1/dashboard/snapshots      # 每日快照
+curl http://127.0.0.1:8000/api/v1/dashboard/needs          # 待满足需求
+curl http://127.0.0.1:8000/api/v1/dashboard/review         # 审核队列
+curl http://127.0.0.1:8000/api/v1/quality                  # 质量综合报告
+curl http://127.0.0.1:8000/api/v1/quality/trend            # 质量趋势
+curl http://127.0.0.1:8000/api/v1/health                   # 健康检查
+curl -X POST http://127.0.0.1:8000/api/v1/heal -H "Content-Type: application/json" -d '{"check_only":false}'  # 自愈
+```
+
 ## 核心设计
+
+### 内容质量评估 (quality.py)
+
+回答「每天获取的内容质量怎么样了」。三级质量视角 + 0~100 综合分：
+
+| 维度 | 权重 | 说明 |
+|---|---|---|
+| completeness | 30% | 关键字段完整度 (description/topics/language/license/stars...) |
+| freshness | 25% | 当日新仓库占比 / 7d 有增量仓库占比 |
+| richness | 20% | 分类覆盖 / 唯一仓库数 / 去重后结构 |
+| index_health | 15% | function_tags / summary / use_case 覆盖率 |
+| decision_health | 10% | 分类分布合理性 / action 候选占比 / review 通过率 |
+
+分级: A (≥90) / B (≥75) / C (≥60) / D (<60)。
+质量报告持久化到 `data/reports/YYYY-MM-DD.json`，供页面趋势图与追溯。
+
+### 自愈合 (self_heal.py)
+
+检测 → 诊断 → 修复 → 记录 四步闭环：
+
+| 检测项 | 严重度 | 自愈动作 |
+|---|---|---|
+| 今日快照缺失 | high | 自动重采集 (fetch + 写盘 + 入库) |
+| 快照损坏/过半分类空 | high | 自动重采集 |
+| 快照过期 (>2 天) | medium | 自动重采集 |
+| GitHub 配额不足 | medium | 记录等待 (跳过) |
+| 储备库为空 | medium | 尝试入库最近快照 |
+| FTS 索引缺失 | low | 自动重建索引 |
+| LLM 不可用 | low | 降级启发式 + 人工审核队列 |
+| 临时文件堆积 | low | 自动清理 |
+
+策略可配置 (`config/self_heal.json`)：`auto_refetch` / `refetch_limit` / `rebuild_fts` / `clean_temp`。
+愈合事件持久化到 `data/heal_log.json`（保留 30 天），页面「自愈中心」可查看。
+
+### Web 管理页面 + 展示视图 (dashboard.py + web/)
+
+「当前获取的内容应该好好整理，有结构，然后再把内容到页面」——
+所有展示数据由 `reserve/dashboard.py` 统一整理为结构化 JSON，
+`web/` 提供零依赖纯静态管理台（原生 HTML/JS/CSS，无构建步骤）：
+
+| 页面 | 数据来源 API | 内容 |
+|---|---|---|
+| 总览 | /api/v1/dashboard/overview | 统计卡片 / 决策分布 / 分类分布 / 质量趋势图 / 快照列表 / 审核队列 / 需求 |
+| 仓库列表 | /api/v1/dashboard/repos | 分页 + 过滤 (decision/category/tag/q) + 排序 (stars/delta7d/newest/score) |
+| 能力簇 | /api/v1/dashboard/clusters | 按功能标签聚类的能力簇卡片 (每簇: 项目/星数/决策) |
+| 质量评估 | /api/v1/quality | 快照 + 储备库 + 趋势 三维质量报告与建议 |
+| 每日快照 | /api/v1/dashboard/snapshots | 最近 30 天快照的质量分/数量/问题 |
+| 需求 | /api/v1/dashboard/needs | pending_needs 列表 + 一键重匹配 |
+| 审核队列 | /api/v1/dashboard/review | action 候选审核 + 通过/拒绝操作 |
+| 自愈中心 | /api/v1/health + /api/v1/heal + /api/v1/heal/log | 健康检查 / 一键自愈 / 愈合日志 |
 
 ### fetch 采集层 (wvb-cc-radar 模型改造)
 
@@ -139,27 +239,41 @@ reserve/
 ├── enrich.py          LLM 功能索引生成 (读 README/发布者介绍 → 高质量索引)
 ├── review.py          LLM 代码审核 (action 候选四维评审) + 人工审核队列
 ├── cluster.py         能力聚类 (按功能标签 / 向量 K-means, 能力簇视图)
+├── quality.py         内容质量评估 (快照/储备库/趋势 + 每日质量报告)
+├── self_heal.py       管道自愈合 (健康检查 → 诊断 → 自动修复 → 事件日志)
+├── dashboard.py       内容结构化整理视图 (总览/列表/能力簇/质量/快照/需求/审核)
 ├── ingest.py          fetch→classify→LLM增强→LLM审核→embed→入库 端到端管道
 ├── search.py          全文/向量/混合检索
 ├── trigger.py         条件触发引擎 + needs 双向生长回路
-└── api.py             REST API (含 /api/v1/llm/status + /api/v1/review/* + /api/v1/reserve/cluster)
+└── api.py             REST API (含 /api/v1/llm/status + /api/v1/review/* + /api/v1/reserve/cluster
+                       + /api/v1/quality + /api/v1/health|heal + /api/v1/dashboard/* + Web 页面托管)
+
+web/
+├── index.html         管理台入口 (总览/仓库列表/能力簇/质量/快照/需求/审核/自愈)
+├── app.js             前端逻辑 (原生 JS, 调用 /api/v1/dashboard/*)
+└── style.css          管理台样式 (深色主题)
 
 config/
 ├── reserve_rules.json 条件判断规则 (热更新)
+├── self_heal.json     自愈合策略 (自动重采集/重建索引/清理开关)
 ├── llm.json           自定义 LLM 配置 (API/本地模型, 不入库)
 └── llm.json.example   配置模板
 
+data/
+├── reports/           每日质量报告 (YYYY-MM-DD.json)
+└── heal_log.json      自愈事件日志 (保留 30 天)
+
 tests/
-└── test_reserve.py    单元测试 (21 项, 无需 pytest)
+└── test_reserve.py    单元测试 (34 项, 无需 pytest)
 
 .github/workflows/
-└── daily-fetch.yml    每日 08:00 定时采集+入库+重匹配
+└── daily-fetch.yml    每日 08:00 定时采集+入库+质量评估+自愈+重匹配
 ```
 
 ## 测试
 
 ```bash
-python tests/test_reserve.py    # 21/21 通过
+python tests/test_reserve.py    # 34/34 通过
 ```
 
 ## LLM 接入（自定义 API / 本地大模型）
@@ -280,6 +394,8 @@ REST API: `GET /api/v1/reserve/cluster?mode=by-tags|kmeans&k=6`
 | `RESERVE_EMBED_DIM` | 储备库向量维度 (默认自动跟随 embedding 模型推断) |
 | `PIPELINE_NEEDS_FILE` | pending_needs 文件路径 (可选) |
 | `REVIEW_QUEUE` | 人工审核队列文件路径 (可选, 默认 config/review_queue.json) |
+| `HEAL_LOG` | 自愈事件日志路径 (可选, 默认 data/heal_log.json) |
+| `REPORT_DIR` | 质量报告目录 (可选, 默认 data/reports/) |
 
 ## 路线图 (R1-R8)
 
@@ -291,5 +407,8 @@ REST API: `GET /api/v1/reserve/cluster?mode=by-tags|kmeans&k=6`
 - [x] R7 REST API 服务 (/api/v1/reserve/* + /api/v1/needs)
 - [x] R8 LLM 接入 (自定义 API/本地 Ollama) + LLM 功能索引 + LLM 代码审核 + 人工审核队列
 - [x] R9 能力聚类 (按功能标签 / 向量 K-means, 能力簇索引视图)
+- [x] R10 内容质量评估 (快照/储备库/趋势 + 每日质量报告, 0~100 综合分 A-D 分级)
+- [x] R11 管道自愈合 (健康检查 → 自动修复 → 事件日志, 快照缺失自动重采集)
+- [x] R12 Web 管理页面 + 结构化展示 API (总览/仓库列表/能力簇/质量/快照/需求/审核/自愈)
 - [ ] R5 action 生态升级自动克隆注册 (候选 PR 半自动流程, 消费 review_status=approved)
 - [ ] 多源聚合 (agents-radar 适配 + 中文榜 + GH Archive 冷启动回填)

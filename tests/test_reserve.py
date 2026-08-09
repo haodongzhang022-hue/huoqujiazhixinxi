@@ -365,11 +365,11 @@ def test_cluster_kmeans():
 
 def test_store_rows_to_dicts_numpy_clean():
     """LanceDB 读回的行应把 numpy array/标量转回原生类型 (下游 if not tags / json 不炸)。"""
-    import tempfile as _tf
+    import tempfile
     from reserve.store import ReserveStore
     from reserve.classifier import classify
     from reserve.embedding import embed_repo
-    s = ReserveStore(str(Path(_tf.mkdtemp(prefix="np-clean-"))))
+    s = ReserveStore(str(Path(tempfile.mkdtemp(prefix="np-clean-"))))
     repo = classify(make_repo("np/clean", desc="mcp server", tags=["mcp"]))
     repo["embedding"] = embed_repo(repo)
     s.upsert_repos([repo])
@@ -408,3 +408,164 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+# ---------- quality (质量评估) ----------
+
+def test_quality_assess_snapshot():
+    """快照质量评估: demo 快照可评估, 有 score/grade/issues。"""
+    from reserve.quality import assess_snapshot
+    rep = assess_snapshot(ROOT / "pipeline" / "data" / "snapshots" / "demo-2026-08-08.json")
+    assert "error" not in rep, rep
+    assert 0 <= rep["score"] <= 100
+    assert rep["grade"]["grade"] in ("A", "B", "C", "D")
+    assert rep["stats"]["total"] == 5
+    assert rep["stats"]["unique"] == 5
+    assert rep["stats"]["missing_fields"]["stars"] == 0  # v1 字段兼容 (stargazers_count)
+
+
+def test_quality_assess_store():
+    """储备库质量评估。"""
+    from reserve.quality import assess_store
+    s = ReserveStore(str(Path(tempfile.mkdtemp(prefix="quality-store-"))))
+    r = classify(make_repo("q/a", desc="mcp server", tags=["mcp"]))
+    r["embedding"] = embed_repo(r)
+    s.upsert_repos([r])
+    rep = assess_store(s)
+    assert 0 <= rep["score"] <= 100
+    assert rep["stats"]["total"] == 1
+
+
+def test_quality_trend():
+    """多日趋势: 兼容 demo-YYYY-MM-DD 命名。"""
+    from reserve.quality import assess_trend
+    snap_dir = ROOT / "pipeline" / "data" / "snapshots"
+    rep = assess_trend(days=7, snapshots_dir=snap_dir)
+    assert "error" not in rep, rep
+    assert rep["days"] >= 1
+    assert isinstance(rep["points"], list)
+    assert rep["points"][0]["date"]  # demo-2026-08-08
+
+
+def test_quality_report():
+    """综合报告生成并写盘。"""
+    from reserve.quality import build_report, write_report
+    s = ReserveStore(str(Path(tempfile.mkdtemp(prefix="quality-report-"))))
+    rep = build_report(days=7, store=s, snapshot=ROOT / "pipeline" / "data" / "snapshots" / "demo-2026-08-08.json")
+    assert rep["type"] == "report"
+    assert rep["overall_score"] >= 0
+    out = write_report(rep, path=Path(tempfile.mkdtemp()) / "report.json")
+    assert out.exists()
+
+
+# ---------- self_heal (自愈合) ----------
+
+def test_self_heal_health_check():
+    """健康检查: 返回 checks, 只有 high 级别才判不健康。"""
+    from reserve.self_heal import health_check, load_policy, save_default_policy
+    save_default_policy()
+    h = health_check()
+    assert "checks" in h
+    assert "summary" in h
+    assert "snapshot_missing" in h["checks"] or "snapshot_ok" in h["checks"]
+
+
+def test_self_heal_diagnose():
+    """诊断: 问题映射到动作。"""
+    from reserve.self_heal import diagnose
+    problems = diagnose({"snapshot_missing": {"ok": False, "severity": "high", "detail": "x"},
+                         "fts_index_missing": {"ok": False, "severity": "low", "detail": "y"}})
+    ids = {p["id"] for p in problems}
+    assert "snapshot_missing" in ids
+    assert "fts_index_missing" in ids
+    assert all(p["action"] in ("refetch", "ingest", "rebuild_fts", "clean_temp", "degrade", "wait") for p in problems)
+
+
+def test_self_heal_log():
+    """愈合日志: 追加/读取。"""
+    from reserve.self_heal import IncidentLog
+    log = IncidentLog(path=str(Path(tempfile.mkdtemp()) / "heal_log.json"))
+    log.append({"event": "heal_test", "level": "info", "ok": True, "detail": "test"})
+    entries = log.list()
+    assert len(entries) == 1
+    assert entries[0]["event"] == "heal_test"
+
+
+def test_self_heal_rebuild_fts():
+    """自愈动作: 重建 FTS 索引。"""
+    from reserve.self_heal import heal_rebuild_fts
+    s = ReserveStore(str(Path(tempfile.mkdtemp(prefix="heal-fts-"))))
+    r = classify(make_repo("h/f", desc="mcp server", tags=["mcp"]))
+    r["embedding"] = embed_repo(r)
+    s.upsert_repos([r])
+    result = heal_rebuild_fts(s)
+    assert result["ok"] is True
+
+
+# ---------- dashboard (结构化整理) ----------
+
+def test_dashboard_overview():
+    """总览视图。"""
+    from reserve.dashboard import overview
+    s = ReserveStore(str(Path(tempfile.mkdtemp(prefix="dash-ov-"))))
+    r = classify(make_repo("d/ov", desc="mcp server", tags=["mcp"]))
+    r["embedding"] = embed_repo(r)
+    s.upsert_repos([r])
+    o = overview(store=s)
+    assert o["stats"]["total_repos"] == 1
+    assert "quality" in o
+    assert "snapshots" in o
+
+
+def test_dashboard_repos_view():
+    """仓库列表视图: 过滤/排序。"""
+    from reserve.dashboard import repos_view
+    s = ReserveStore(str(Path(tempfile.mkdtemp(prefix="dash-repos-"))))
+    r1 = classify(make_repo("d/r1", stars=100, desc="mcp server", tags=["mcp"]))
+    r2 = classify(make_repo("d/r2", stars=500, desc="rag knowledge", tags=["rag"]))
+    for r in (r1, r2):
+        r["embedding"] = embed_repo(r)
+    s.upsert_repos([r1, r2])
+    v = repos_view(store=s, limit=10, sort="stars")
+    assert v["total"] == 2
+    assert v["items"][0]["full_name"] == "d/r2"  # stars 排序
+    v2 = repos_view(store=s, q="rag")
+    assert v2["total"] == 1
+    assert v2["items"][0]["full_name"] == "d/r2"
+
+
+def test_dashboard_clusters_view():
+    """能力簇视图。"""
+    from reserve.dashboard import clusters_view
+    s = ReserveStore(str(Path(tempfile.mkdtemp(prefix="dash-clu-"))))
+    r = classify(make_repo("d/c", desc="mcp server", tags=["mcp"]))
+    r["embedding"] = embed_repo(r)
+    s.upsert_repos([r])
+    c = clusters_view(store=s, mode="by-tags")
+    assert "clusters" in c
+    assert c.get("summary", {}).get("total_repos", 0) >= 1
+
+
+def test_dashboard_quality_view():
+    """质量视图。"""
+    from reserve.dashboard import quality_view
+    s = ReserveStore(str(Path(tempfile.mkdtemp(prefix="dash-qual-"))))
+    q = quality_view(days=7, store=s, snapshot=ROOT / "pipeline" / "data" / "snapshots" / "demo-2026-08-08.json")
+    assert q["type"] == "report"
+    assert q["overall_score"] >= 0
+
+
+# ---------- API 路由 (v3) ----------
+
+def test_api_routes_registered():
+    """API v3 路由: 验证新端点存在 (通过模拟请求处理)。"""
+    import io
+    from reserve import api as api_mod
+    # 直接检查 do_GET 源码包含新路由 (避免起服务)
+    src = open(api_mod.__file__, encoding="utf-8").read()
+    for route in ("/api/v1/quality", "/api/v1/health", "/api/v1/heal/log",
+                  "/api/v1/dashboard/overview", "/api/v1/dashboard/repos",
+                  "/api/v1/dashboard/clusters", "/api/v1/dashboard/snapshots",
+                  "/api/v1/dashboard/review", "/api/v1/dashboard/needs",
+                  "_serve_static"):
+        assert route in src, f"missing route: {route}"

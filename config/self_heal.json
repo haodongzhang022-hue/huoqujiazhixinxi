@@ -1,0 +1,9 @@
+{
+  "auto_refetch": true,
+  "refetch_limit": 50,
+  "rebuild_fts": true,
+  "clean_temp": true,
+  "max_incidents_per_run": 20,
+  "log_retention_days": 30,
+  "auto_ingest": true
+}
