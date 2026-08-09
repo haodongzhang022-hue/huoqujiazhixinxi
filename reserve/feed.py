@@ -92,6 +92,17 @@ SOURCES = [
         "note": "已接入: pipeline/adapters/rss.py (通用 RSS/Atom)",
         "adapter": "rss",
     },
+    {
+        "id": "prediction",
+        "label": "预测市场",
+        "description": "Polymarket 等预测市场: 事件概率/成交量/走向信号 (ISSUE #5)",
+        "status": "active",
+        "item_type": "trend",
+        "enabled": True,
+        "planned": False,
+        "note": "已接入: pipeline/adapters/polymarket.py (结构化行情, 单独对接见 docs/sources-extension.md §6)",
+        "adapter": "polymarket",
+    },
 ]
 
 # 多源适配器缓存目录 (pipeline/data/sources/*.json, 由 reserve.sources 拉取)
