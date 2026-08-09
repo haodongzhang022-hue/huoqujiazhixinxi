@@ -11,6 +11,25 @@
   GET  /api/v1/needs                查看 pending_needs
   POST /api/v1/needs/rematch        重匹配 pending_needs
 
+质量/自愈/展示 (v3):
+  GET  /api/v1/quality              内容质量评估 (快照+储备库+趋势)
+  GET  /api/v1/quality/snapshot     快照质量
+  GET  /api/v1/quality/store        储备库质量
+  GET  /api/v1/quality/trend        质量趋势
+  GET  /api/v1/health               管道健康检查
+  POST /api/v1/heal                 触发自愈合
+  GET  /api/v1/heal/log             愈合历史
+  GET  /api/v1/dashboard/overview   总览
+  GET  /api/v1/dashboard/repos      仓库列表 (分页/过滤/排序)
+  GET  /api/v1/dashboard/clusters   能力簇
+  GET  /api/v1/dashboard/snapshots  每日快照
+  GET  /api/v1/dashboard/review     审核队列
+  GET  /api/v1/dashboard/needs      待满足需求
+
+Web 页面 (静态托管, 可直接浏览器访问):
+  GET  /                             管理页面 (总览)
+  GET  /web/*                        静态资源 (index.html / app.js / style.css)
+
 用法:
   python -m reserve.api [--port 8000]
   LANCE_DIR=/path/to/reserve python -m reserve.api
@@ -20,8 +39,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 
 from reserve.store import ReserveStore
 from reserve.preprocessor import normalize_repo, dedupe
@@ -31,6 +52,9 @@ from reserve.search import search
 from reserve.trigger import trigger, rematch_pending_needs
 from reserve.llm import get_provider, describe_config, load_config
 from reserve.review import review_action_candidates, queue_list, queue_update
+
+# 静态页面目录 (web/)
+WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 
 
 class ReserveAPI(BaseHTTPRequestHandler):
@@ -117,7 +141,99 @@ class ReserveAPI(BaseHTTPRequestHandler):
             else:
                 result = cluster_by_tags(repos)
             return self._send(200, result)
+
+        # ---------- v3: 质量评估 ----------
+        if path == "/api/v1/quality":
+            from reserve.quality import build_report
+            days = int(qs.get("days", 7))
+            return self._send(200, _json_clean(build_report(days=days, store=self.store)))
+        if path == "/api/v1/quality/snapshot":
+            from reserve.quality import assess_snapshot
+            snap = qs.get("path")
+            if snap:
+                return self._send(200, _json_clean(assess_snapshot(snap)))
+            today = __import__("datetime").datetime.now(__import__("datetime").timezone.utc).strftime("%Y-%m-%d")
+            p = WEB_DIR.parent / "pipeline" / "data" / "snapshots" / f"{today}.json"
+            if not p.exists():
+                recent = sorted((WEB_DIR.parent / "pipeline" / "data" / "snapshots").glob("*.json"), reverse=True)
+                p = recent[0] if recent else p
+            return self._send(200, _json_clean(assess_snapshot(p)))
+        if path == "/api/v1/quality/store":
+            from reserve.quality import assess_store
+            return self._send(200, _json_clean(assess_store(self.store)))
+        if path == "/api/v1/quality/trend":
+            from reserve.quality import assess_trend
+            days = int(qs.get("days", 7))
+            return self._send(200, _json_clean(assess_trend(days=days)))
+
+        # ---------- v3: 自愈合 ----------
+        if path == "/api/v1/health":
+            from reserve.self_heal import health_check
+            return self._send(200, _json_clean(health_check(self.store)))
+        if path == "/api/v1/heal/log":
+            from reserve.self_heal import IncidentLog
+            limit = int(qs.get("limit", 50))
+            return self._send(200, {"incidents": IncidentLog().list(limit=limit)})
+
+        # ---------- v3: 展示视图 ----------
+        if path == "/api/v1/dashboard/overview":
+            from reserve.dashboard import overview
+            days = int(qs.get("days", 7))
+            return self._send(200, _json_clean(overview(store=self.store, days=days)))
+        if path == "/api/v1/dashboard/repos":
+            from reserve.dashboard import repos_view
+            return self._send(200, _json_clean(repos_view(
+                store=self.store,
+                decision=qs.get("decision"), category=qs.get("category"), tag=qs.get("tag"),
+                q=qs.get("q"), limit=int(qs.get("limit", 50)), offset=int(qs.get("offset", 0)),
+                sort=qs.get("sort", "stars"))))
+        if path == "/api/v1/dashboard/clusters":
+            from reserve.dashboard import clusters_view
+            return self._send(200, _json_clean(clusters_view(
+                store=self.store, mode=qs.get("mode", "by-tags"),
+                k=int(qs.get("k", 6)))))
+        if path == "/api/v1/dashboard/snapshots":
+            from reserve.dashboard import snapshots_view
+            days = int(qs.get("days", 14))
+            return self._send(200, _json_clean(snapshots_view(days=days, store=self.store)))
+        if path == "/api/v1/dashboard/review":
+            from reserve.dashboard import review_view
+            return self._send(200, _json_clean(review_view()))
+        if path == "/api/v1/dashboard/needs":
+            from reserve.dashboard import needs_view
+            return self._send(200, _json_clean(needs_view(store=self.store)))
+
+        # ---------- v3: Web 静态页面 ----------
+        if path == "/" or path == "/index.html":
+            return self._serve_static("index.html")
+        if path.startswith("/web/"):
+            return self._serve_static(path[len("/web/"):])
+
         return self._send(404, {"error": f"no route: {path}"})
+
+    def _serve_static(self, name: str):
+        """托管 web/ 静态资源。安全: 只允许 web 目录内文件。"""
+        name = name.replace("..", "").lstrip("/")
+        p = (WEB_DIR / name).resolve()
+        if not str(p).startswith(str(WEB_DIR.resolve())) or not p.exists():
+            return self._send(404, {"error": f"not found: {name}"})
+        content = p.read_bytes()
+        ctype = "text/html; charset=utf-8"
+        if p.suffix == ".js":
+            ctype = "application/javascript; charset=utf-8"
+        elif p.suffix == ".css":
+            ctype = "text/css; charset=utf-8"
+        elif p.suffix == ".json":
+            ctype = "application/json; charset=utf-8"
+        elif p.suffix == ".png":
+            ctype = "image/png"
+        elif p.suffix == ".svg":
+            ctype = "image/svg+xml"
+        self.send_response(200)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(content)))
+        self.end_headers()
+        self.wfile.write(content)
 
     def do_POST(self):
         path = self.path.split("?")[0]
@@ -168,6 +284,13 @@ class ReserveAPI(BaseHTTPRequestHandler):
         if path == "/api/v1/needs/rematch":
             results = rematch_pending_needs(self.store)
             return self._send(200, {"matched": len(results), "results": results})
+        if path == "/api/v1/heal":
+            """触发自愈合。body: {check_only: bool}（默认 false 自动修复）。"""
+            from reserve.self_heal import run_self_heal
+            data = self._read_json()
+            check_only = bool(data.get("check_only", False))
+            result = run_self_heal(check_only=check_only, store=self.store, verbose=False)
+            return self._send(200, _json_clean(result))
         if path == "/api/v1/review/run":
             """对 action 候选触发 LLM 代码审核 (可指定快照或直接传 repos)。"""
             data = self._read_json()
@@ -227,6 +350,24 @@ def _json_default(o):
     if isinstance(o, (np.bool_,)):
         return bool(o)
     return str(o)
+
+
+def _json_clean(obj):
+    """递归清理 numpy 类型 -> 原生类型 (JSON 安全序列化)。"""
+    import numpy as np
+    if isinstance(obj, dict):
+        return {k: _json_clean(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_json_clean(v) for v in obj]
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    if isinstance(obj, (np.integer,)):
+        return int(obj)
+    if isinstance(obj, (np.floating,)):
+        return float(obj)
+    if isinstance(obj, (np.bool_,)):
+        return bool(obj)
+    return obj
 
 
 def main() -> int:

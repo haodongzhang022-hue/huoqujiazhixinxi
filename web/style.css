@@ -1,0 +1,215 @@
+/* 开源项目储备库管理台样式 */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f172a;
+  --panel: #1e293b;
+  --panel2: #263349;
+  --border: #334155;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --green: #34d399;
+  --yellow: #fbbf24;
+  --red: #f87171;
+  --purple: #a78bfa;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; gap: 24px;
+  padding: 12px 24px;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand { font-size: 18px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+
+.tab {
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tab:hover { color: var(--text); background: var(--panel); }
+.tab.active { color: var(--accent); background: var(--panel2); border-color: var(--accent); }
+
+main { padding: 24px; max-width: 1400px; margin: 0 auto; }
+
+.view { display: none; }
+.view.active { display: block; }
+
+.loading { padding: 60px; text-align: center; color: var(--muted); }
+
+/* 统计卡片 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+.stat-card .num { font-size: 28px; font-weight: 700; }
+.stat-card .label { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+/* 面板 */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.panel h2 { font-size: 16px; margin-bottom: 14px; color: var(--accent); }
+.panel h3 { font-size: 14px; margin: 14px 0 8px; color: var(--text); }
+
+/* 表格 */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-weight: 600; background: var(--panel2); }
+tr:hover td { background: rgba(56, 189, 248, 0.05); }
+
+/* 徽章 */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge.action { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+.badge.reserve { background: rgba(56, 189, 248, 0.15); color: var(--accent); }
+.badge.partial { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+.badge.ignore { background: rgba(148, 163, 184, 0.15); color: var(--muted); }
+.badge.none { background: rgba(148, 163, 184, 0.15); color: var(--muted); }
+.badge.approved { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+.badge.pending { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+.badge.rejected { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+
+/* 标签 */
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  margin: 2px;
+  background: var(--panel2);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+/* 质量条 */
+.grade-bar {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--panel2);
+  overflow: hidden;
+  margin: 6px 0;
+}
+.grade-bar .fill {
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, var(--green), var(--accent));
+}
+.grade-A .fill { background: linear-gradient(90deg, #10b981, #34d399); }
+.grade-B .fill { background: linear-gradient(90deg, #0ea5e9, #38bdf8); }
+.grade-C .fill { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.grade-D .fill { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+/* 工具条 */
+.toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.toolbar input, .toolbar select {
+  padding: 8px 12px;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13px;
+}
+.toolbar button, .btn {
+  padding: 8px 16px;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: #0f172a;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+.btn.secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+.btn.danger { background: var(--red); color: #0f172a; }
+
+/* 分页 */
+.pagination { display: flex; gap: 8px; align-items: center; margin-top: 16px; color: var(--muted); font-size: 13px; }
+
+/* 图表 */
+.chart { display: flex; align-items: flex-end; gap: 8px; height: 140px; padding: 8px 0; }
+.chart .bar {
+  flex: 1;
+  background: linear-gradient(180deg, var(--accent), rgba(56, 189, 248, 0.3));
+  border-radius: 6px 6px 0 0;
+  min-height: 4px;
+  position: relative;
+}
+.chart .bar span {
+  position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; color: var(--muted); white-space: nowrap;
+}
+
+/* 簇卡片 */
+.cluster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+.cluster-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+.cluster-card .title { font-size: 15px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+.cluster-card .meta { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+.cluster-card ul { list-style: none; }
+.cluster-card li { font-size: 13px; padding: 3px 0; color: var(--text); }
+.cluster-card li a { color: var(--accent); text-decoration: none; }
+
+/* 问题列表 */
+.issue-list li { padding: 6px 0; font-size: 13px; color: var(--yellow); }
+.issue-list li.done { color: var(--green); }
+
+.empty { padding: 40px; text-align: center; color: var(--muted); }
+
+/* 状态行 */
+.status-line { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; }
+.status-pill {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+}
+.status-pill.ok { border-color: var(--green); color: var(--green); }
+.status-pill.warn { border-color: var(--yellow); color: var(--yellow); }
+.status-pill.err { border-color: var(--red); color: var(--red); }
+
+/* 描述截断 */
+.desc { max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
