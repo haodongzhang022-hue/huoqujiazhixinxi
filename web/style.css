@@ -213,3 +213,101 @@ tr:hover td { background: rgba(56, 189, 248, 0.05); }
 
 /* 描述截断 */
 .desc { max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ===== 信息流 (人类优先 / AI 优先) ===== */
+.mode-switch { display: flex; gap: 6px; }
+.btn.primary { background: var(--accent); color: #0f172a; }
+
+.feed-meta {
+  font-size: 13px;
+  padding: 10px 14px;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  line-height: 1.8;
+}
+
+.item-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 14px;
+}
+
+.item-card {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  transition: border-color 0.2s;
+}
+.item-card:hover { border-color: var(--accent); }
+
+.item-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.item-title { font-size: 14px; font-weight: 700; color: var(--accent); text-decoration: none; }
+.item-title:hover { text-decoration: underline; }
+
+.item-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 6px; font-size: 12px; }
+.stars { color: var(--yellow); }
+.lang { color: var(--purple); }
+.category { color: var(--muted); }
+
+.item-desc { font-size: 13px; color: var(--text); margin-top: 8px; line-height: 1.6; }
+.item-content {
+  margin-top: 8px; padding: 8px 10px;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+  font-size: 12px;
+  color: var(--muted);
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+.item-tags { margin-top: 8px; }
+.use-case { margin-top: 6px; font-size: 12px; color: var(--yellow); }
+.review-line { margin-top: 8px; display: flex; gap: 8px; align-items: center; font-size: 12px; flex-wrap: wrap; }
+.review-score { color: var(--purple); font-weight: 600; }
+.item-src { margin-top: 8px; font-size: 11px; }
+
+.muted { color: var(--muted); }
+
+/* AI 优先 JSON 展示 */
+.ai-feed-pre {
+  max-height: 420px;
+  overflow: auto;
+  background: #0b1220;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #a5f3fc;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* 数据源类型徽章 */
+.badge.type-repo { background: rgba(56, 189, 248, 0.15); color: var(--accent); }
+.badge.type-paper { background: rgba(167, 139, 250, 0.15); color: var(--purple); }
+.badge.type-trend { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+.badge.type-news { background: rgba(148, 163, 184, 0.15); color: var(--muted); }
+.badge.type-cnb-project { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+
+/* 数据源状态 */
+.badge.active { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+.badge.reserved { background: rgba(167, 139, 250, 0.15); color: var(--purple); }
+.badge.error { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+.badge.not_configured { background: rgba(148, 163, 184, 0.15); color: var(--muted); }
+
+/* 审核徽章 */
+.badge.approve { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+.badge.condition { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+.badge.manual { background: rgba(167, 139, 250, 0.15); color: var(--purple); }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .topbar { flex-direction: column; align-items: flex-start; gap: 10px; }
+  main { padding: 14px; }
+  .item-grid { grid-template-columns: 1fr; }
+  .toolbar { flex-direction: column; align-items: stretch; }
+}

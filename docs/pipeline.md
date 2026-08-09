@@ -68,17 +68,54 @@ python -m reserve.trigger --rematch        # 重匹配 pending_needs (新项目�
 python -m reserve.trigger --needs          # 查看未满足需求
 ```
 
-### 6. REST API
+### 6. FastAPI 聚合管理 + 对外信息流 (ISSUE #4, 推荐)
+
+> 设计哲学：**一次获取、多人共享** —— 每天的开源项目获取和按功能分类不做重复劳动；
+> 对外提供 **人类优先(human) / AI 优先(ai) 双信息流**，允许外部/AI 直接获取信息搭建自动化流程。
 
 ```bash
-python -m reserve.api --port 8000
-curl http://127.0.0.1:8000/api/v1/health
-curl "http://127.0.0.1:8000/api/v1/reserve/search?q=mcp"
-curl -X POST http://127.0.0.1:8000/api/v1/reserve/trigger \
-  -H "Content-Type: application/json" -d '{"query":"需要 RAG 向量检索能力"}'
+python -m reserve.fastapi_app --port 8000
+# 浏览器打开 http://127.0.0.1:8000/ 即可看到聚合管理台
+# 页面: 总览 / 今日汇总 / 信息流(人/AI) / 仓库 / 能力簇 / 质量 / 快照 / 需求 / 审核 / 数据源 / 自愈
 ```
 
-### 7. 质量评估 ("每天获取的内容质量怎么样了")
+**对外信息流 API（人类/AI 共用，一次获取多人使用）**：
+
+```bash
+# 人类优先: 按生态分类分组 + 中文摘要 + 功能标签 + 适用场景 + 审核建议
+curl "http://127.0.0.1:8000/api/v1/feed?mode=human"
+# AI 优先: 扁平条目 + content 正文, 机器可直接消费 (搭自动化/喂 Agent)
+curl "http://127.0.0.1:8000/api/v1/feed?mode=ai&limit=100"
+# 指定日期 / 过滤 (category / decision / tag)
+curl "http://127.0.0.1:8000/api/v1/feed/2026-08-08?mode=human&category=rag-kb&decision=action"
+# 数据源注册表 (含预留扩展位: CNB 新项目/论文/热点/新闻)
+curl http://127.0.0.1:8000/api/v1/sources
+# 每日聚合摘要 (各数据源 + 统计 + 分组信息流)
+curl http://127.0.0.1:8000/api/v1/digest/2026-08-08
+# 服务健康 (含数据源状态)
+curl http://127.0.0.1:8000/api/v1/health
+```
+
+**预留接口（后续 ISSUE 接入，页面/API 已预留）**：
+
+| 数据源 | id | 类型 | 状态 |
+|---|---|---|---|
+| GitHub 开源项目 | github-repos | repo | ✅ 已接入 |
+| CNB 新项目 | cnb-projects | cnb-project | ⏳ 预留 |
+| AI/科技论文 | papers | paper | ⏳ 预留 |
+| 热点与科技进展 | tech-trends | trend | ⏳ 预留 |
+| 科技新闻 | news | news | ⏳ 预留 |
+
+> 接入方式：实现对应 fetch 并归一化为统一 Item（契约 schema_version=1.0, 见 reserve/schemas.py），
+> 即可自动汇入 `/api/v1/feed` 信息流与每日聚合。`POST /api/v1/sync/{source}` 为预留的单源同步入口。
+
+### 7. REST API (兼容旧版 http.server)
+
+```bash
+python -m reserve.api --port 8000   # 旧版轻量服务, 功能与 FastAPI 兼容
+```
+
+### 8. 质量评估 ("每天获取的内容质量怎么样了")
 
 ```bash
 # 今日快照质量
@@ -91,7 +128,7 @@ python -m reserve.quality --trend --days 7
 python -m reserve.quality --report
 ```
 
-### 8. 自愈合 (管道自动修复)
+### 9. 自愈合 (管道自动修复)
 
 ```bash
 # 健康检查 (只检查不修复)
@@ -102,7 +139,7 @@ python -m reserve.self_heal
 python -m reserve.self_heal --log
 ```
 
-### 9. Web 管理页面 + 展示 API ("内容整理好显示到页面")
+### 10. Web 管理页面 + 展示 API (旧 http.server 版, 兼容保留)
 
 ```bash
 python -m reserve.api --port 8000
@@ -177,6 +214,25 @@ curl -X POST http://127.0.0.1:8000/api/v1/heal -H "Content-Type: application/jso
 | 审核队列 | /api/v1/dashboard/review | action 候选审核 + 通过/拒绝操作 |
 | 自愈中心 | /api/v1/health + /api/v1/heal + /api/v1/heal/log | 健康检查 / 一键自愈 / 愈合日志 |
 
+### FastAPI 聚合管理 + 对外信息流 (fastapi_app.py + feed.py + schemas.py)
+
+「一次获取、多人共享；人类浏览、AI 消费」——所有展示与对外数据由 `reserve/feed.py` 统一整理：
+
+| 视图 | API | 说明 |
+|---|---|---|
+| 总览 | /api/v1/dashboard/overview + /api/v1/status | 统计卡片 + 质量趋势 + 数据源状态 |
+| 今日汇总 | /api/v1/digest/{date} | 每日聚合: 各源条目 + 统计 + 分组 |
+| 信息流 (人类) | /api/v1/feed?mode=human | 按分类分组, 中文摘要+标签+场景+审核建议 |
+| 信息流 (AI) | /api/v1/feed?mode=ai | 扁平条目 + content 正文, 机器可消费 |
+| 数据源 | /api/v1/sources | 已接入 + 预留扩展位 (CNB/论文/热点/新闻) |
+| 仓库列表 | /api/v1/dashboard/repos | 分页 + 过滤 + 排序 |
+| 能力簇 | /api/v1/dashboard/clusters | 功能标签聚类 |
+| 质量评估 | /api/v1/quality | 快照 + 储备库 + 趋势 |
+| 每日快照 | /api/v1/dashboard/snapshots | 最近 30 天 |
+| 需求 | /api/v1/dashboard/needs | pending_needs + 重匹配 |
+| 审核队列 | /api/v1/dashboard/review | LLM 审核 + 人工确认 |
+| 自愈中心 | /api/v1/health + /api/v1/heal | 健康检查 + 自动修复 |
+
 ### fetch 采集层 (wvb-cc-radar 模型改造)
 
 | 原版 (wvb-cc-radar) | 本仓库改造 |
@@ -242,16 +298,18 @@ reserve/
 ├── quality.py         内容质量评估 (快照/储备库/趋势 + 每日质量报告)
 ├── self_heal.py       管道自愈合 (健康检查 → 诊断 → 自动修复 → 事件日志)
 ├── dashboard.py       内容结构化整理视图 (总览/列表/能力簇/质量/快照/需求/审核)
+├── schemas.py         统一信息条目/数据源/信息流 数据契约 (Pydantic, schema_version=1.0)
+├── feed.py            人类优先/AI 优先 信息流 (对外公开, 一次获取多人共享, 含预留扩展位)
+├── fastapi_app.py     FastAPI 聚合管理 + 对外信息流 API + 兼容既有 REST
 ├── ingest.py          fetch→classify→LLM增强→LLM审核→embed→入库 端到端管道
 ├── search.py          全文/向量/混合检索
 ├── trigger.py         条件触发引擎 + needs 双向生长回路
-└── api.py             REST API (含 /api/v1/llm/status + /api/v1/review/* + /api/v1/reserve/cluster
-                       + /api/v1/quality + /api/v1/health|heal + /api/v1/dashboard/* + Web 页面托管)
+└── api.py             (旧) http.server REST API + Web 静态托管 (兼容保留)
 
 web/
-├── index.html         管理台入口 (总览/仓库列表/能力簇/质量/快照/需求/审核/自愈)
-├── app.js             前端逻辑 (原生 JS, 调用 /api/v1/dashboard/*)
-└── style.css          管理台样式 (深色主题)
+├── index.html         聚合管理台入口 (总览/今日汇总/信息流/仓库/能力簇/质量/快照/需求/审核/数据源/自愈)
+├── app.js             前端逻辑 (原生 JS, 调用 /api/v1/feed + /api/v1/dashboard/*)
+└── style.css          管理台样式 (深色主题, 信息流卡片/数据源徽章/AI JSON 展示)
 
 config/
 ├── reserve_rules.json 条件判断规则 (热更新)
@@ -273,7 +331,7 @@ tests/
 ## 测试
 
 ```bash
-python tests/test_reserve.py    # 34/34 通过
+python tests/test_reserve.py    # 40/40 通过
 ```
 
 ## LLM 接入（自定义 API / 本地大模型）

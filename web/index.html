@@ -3,49 +3,39 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>开源项目储备库管理台</title>
+<title>科技每日信息聚合 · 人类/AI 双信息流</title>
 <link rel="stylesheet" href="/web/style.css">
 </head>
 <body>
 <header class="topbar">
-  <div class="brand">📡 开源项目储备库管理台</div>
+  <div class="brand">📡 科技每日信息聚合</div>
   <nav class="tabs">
     <button class="tab active" data-view="overview">总览</button>
+    <button class="tab" data-view="digest">今日汇总</button>
+    <button class="tab" data-view="feed">信息流</button>
     <button class="tab" data-view="repos">仓库列表</button>
     <button class="tab" data-view="clusters">能力簇</button>
     <button class="tab" data-view="quality">质量评估</button>
     <button class="tab" data-view="snapshots">每日快照</button>
     <button class="tab" data-view="needs">需求</button>
     <button class="tab" data-view="review">审核队列</button>
+    <button class="tab" data-view="sources">数据源</button>
     <button class="tab" data-view="heal">自愈中心</button>
   </nav>
 </header>
 
 <main id="app">
-  <section id="view-overview" class="view active">
-    <div class="loading">加载中...</div>
-  </section>
-  <section id="view-repos" class="view">
-    <div class="loading">加载中...</div>
-  </section>
-  <section id="view-clusters" class="view">
-    <div class="loading">加载中...</div>
-  </section>
-  <section id="view-quality" class="view">
-    <div class="loading">加载中...</div>
-  </section>
-  <section id="view-snapshots" class="view">
-    <div class="loading">加载中...</div>
-  </section>
-  <section id="view-needs" class="view">
-    <div class="loading">加载中...</div>
-  </section>
-  <section id="view-review" class="view">
-    <div class="loading">加载中...</div>
-  </section>
-  <section id="view-heal" class="view">
-    <div class="loading">加载中...</div>
-  </section>
+  <section id="view-overview" class="view active"><div class="loading">加载中...</div></section>
+  <section id="view-digest" class="view"><div class="loading">加载中...</div></section>
+  <section id="view-feed" class="view"><div class="loading">加载中...</div></section>
+  <section id="view-repos" class="view"><div class="loading">加载中...</div></section>
+  <section id="view-clusters" class="view"><div class="loading">加载中...</div></section>
+  <section id="view-quality" class="view"><div class="loading">加载中...</div></section>
+  <section id="view-snapshots" class="view"><div class="loading">加载中...</div></section>
+  <section id="view-needs" class="view"><div class="loading">加载中...</div></section>
+  <section id="view-review" class="view"><div class="loading">加载中...</div></section>
+  <section id="view-sources" class="view"><div class="loading">加载中...</div></section>
+  <section id="view-heal" class="view"><div class="loading">加载中...</div></section>
 </main>
 
 <script src="/web/app.js"></script>

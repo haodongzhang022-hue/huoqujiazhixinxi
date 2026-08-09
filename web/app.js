@@ -1,4 +1,4 @@
-/* 开源项目储备库管理台前端逻辑 */
+/* 科技每日信息聚合 · 人类/AI 双信息流 前端逻辑 */
 "use strict";
 
 const API = "/api/v1";
@@ -29,14 +29,69 @@ function gradeClass(grade) {
   return `grade-${esc(grade || "D")}`;
 }
 
+function typeBadge(type) {
+  const map = { repo: "📦 项目", paper: "📄 论文", trend: "🔥 热点", news: "📰 新闻", "cnb-project": "🧩 CNB" };
+  return `<span class="badge type-${esc(type)}">${esc(map[type] || type)}</span>`;
+}
+
+function itemCard(it) {
+  const tags = (it.function_tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join("");
+  const stars = it.stars ? `<span class="stars">⭐ ${esc(it.stars)}${it.stars_delta_7d ? ` <span style="color:var(--green)">+${esc(it.stars_delta_7d)}/7d</span>` : ""}${it.stars_delta_24h ? ` <span style="color:var(--green)">+${esc(it.stars_delta_24h)}/24h</span>` : ""}</span>` : "";
+  const newTag = it.is_new ? ' <span class="tag" style="color:var(--yellow)">NEW</span>' : "";
+  const decision = it.category_decision ? badge(it.category_decision) : "";
+  const review = it.review;
+  const revHtml = review && (review.verdict || review.recommendation) ? `
+    <div class="review-line">
+      ${review.verdict ? `<span class="badge ${esc(review.verdict)}">${esc(review.verdict)}</span>` : ""}
+      ${review.score != null ? `<span class="review-score">评分 ${esc(review.score)}</span>` : ""}
+      ${review.recommendation ? `<span class="muted">${esc(review.recommendation)}</span>` : ""}
+    </div>` : "";
+  const content = it.content ? `<div class="item-content">${esc(it.content)}</div>` : "";
+  return `
+    <div class="item-card">
+      <div class="item-head">
+        <a href="${esc(it.url || "#")}" target="_blank" class="item-title">${esc(it.title)}</a>${newTag}
+        ${typeBadge(it.type)}
+      </div>
+      <div class="item-meta">
+        ${stars} ${it.language ? `<span class="lang">${esc(it.language)}</span>` : ""}
+        ${it.category ? `<span class="category">${esc(it.category)}</span>` : ""}
+        ${decision}
+      </div>
+      <div class="item-desc">${esc(it.summary_zh || it.description || "")}</div>
+      ${content}
+      ${tags ? `<div class="item-tags">${tags}</div>` : ""}
+      ${it.use_case ? `<div class="use-case">💡 适用场景: ${esc(it.use_case)}</div>` : ""}
+      ${revHtml}
+      <div class="item-src muted">来源: ${esc(it.source_label || it.source)} · ${esc((it.published_at || "").slice(0, 10) || "-")}</div>
+    </div>`;
+}
+
+function humanFeedHTML(data, limit) {
+  const headline = data.headline || {};
+  let html = "";
+  if (headline.items && headline.items.length) {
+    html += `<div class="panel"><h2>🏆 ${esc(headline.title || "今日最值得关注")}</h2><div class="item-grid">${headline.items.map(itemCard).join("")}</div></div>`;
+  }
+  html += (data.sections || []).map(sec => `
+    <div class="panel">
+      <h2>${esc(sec.title)} <span class="muted">(${esc(sec.description || sec.items.length + " 个项目")})</span></h2>
+      <div class="item-grid">${(sec.items || []).map(itemCard).join("")}</div>
+    </div>`).join("");
+  if (!html) html = '<div class="empty">暂无数据, 先运行 python -m pipeline.fetch 采集</div>';
+  return html;
+}
+
 /* ---------------- 总览 ---------------- */
 async function renderOverview(container) {
   const data = await getJSON(`${API}/dashboard/overview`);
+  const status = await getJSON(`${API}/status`);
   const s = data.stats;
   const q = data.quality;
 
   const cards = [
     ["储备仓库", s.total_repos],
+    ["今日信息流", (status.feed_today || {}).total || 0],
     ["action 升级", s.decisions.action || 0],
     ["reserve 储备", s.decisions.reserve || 0],
     ["待满足需求", s.needs.open],
@@ -44,15 +99,11 @@ async function renderOverview(container) {
     ["储备库质量", q.store_score != null ? q.store_score : "-"],
   ].map(([label, num]) => `<div class="stat-card"><div class="num">${esc(num)}</div><div class="label">${esc(label)}</div></div>`).join("");
 
-  // 决策分布
   const decisions = Object.entries(s.decisions || {})
     .map(([k, v]) => `<tr><td>${badge(k)}</td><td>${esc(v)}</td></tr>`).join("");
-
-  // 分类分布
   const cats = Object.entries(s.categories || {})
     .map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("");
 
-  // 质量趋势图
   const trend = (q.trend || []);
   const maxScore = Math.max(100, ...trend.map(t => t.score || 0));
   const bars = trend.map(t => {
@@ -60,7 +111,6 @@ async function renderOverview(container) {
     return `<div class="bar" style="height:${h}%"><span>${esc(t.date)}</span></div>`;
   }).join("");
 
-  // 快照列表
   const snaps = (data.snapshots || []).map(sn => `
     <tr>
       <td>${esc(sn.date)}</td>
@@ -71,15 +121,13 @@ async function renderOverview(container) {
       <td>${esc(sn.action_candidates)}</td>
     </tr>`).join("");
 
-  // 审核队列预览
-  const reviewPrev = (data.review_queue_preview || []).map(r =>
-    `<tr><td><a href="${esc(r.url)}" target="_blank">${esc(r.full_name)}</a></td><td>${badge(r.category_decision)}</td><td><span class="badge pending">待审</span></td></tr>`
-  ).join("") || `<tr><td colspan="3" class="empty">暂无待审项目</td></tr>`;
-
-  // 需求预览
-  const needsPrev = (data.needs_preview || []).map(n =>
-    `<tr><td>${esc(n.text)}</td><td><span class="badge pending">${esc(n.status)}</span></td></tr>`
-  ).join("") || `<tr><td colspan="2" class="empty">暂无待满足需求</td></tr>`;
+  const srcRows = (status.sources || []).map(sr => `
+    <tr>
+      <td>${esc(sr.label)}</td>
+      <td><span class="badge ${esc(sr.status)}">${esc(sr.status)}</span></td>
+      <td>${sr.enabled ? "✅ 已接入" : "⏳ 预留接口"}</td>
+      <td class="desc" title="${esc(sr.note)}">${esc(sr.note || "-")}</td>
+    </tr>`).join("") || '<tr><td colspan="4" class="empty">暂无数据源</td></tr>';
 
   container.innerHTML = `
     <div class="stats-grid">${cards}</div>
@@ -88,6 +136,10 @@ async function renderOverview(container) {
       ${trend.length ? `<div class="chart">${bars}</div>` : '<div class="empty">尚无快照数据, 先运行 python -m pipeline.fetch</div>'}
       <p style="margin-top:8px;font-size:13px;color:var(--muted)">趋势方向: ${esc(q.trend_direction || "-")} | 平均分: ${esc(q.trend_avg ?? "-")} | 储备库质量: <b>${esc(q.store_score ?? "-")}</b> (${esc(q.store_grade || "-")})</p>
       ${q.store_issues && q.store_issues.length ? `<ul class="issue-list">${q.store_issues.map(i => `<li>⚠️ ${esc(i)}</li>`).join("")}</ul>` : ""}
+    </div>
+    <div class="panel">
+      <h2>数据源状态 (含预留扩展位)</h2>
+      <table><thead><tr><th>数据源</th><th>状态</th><th>接入</th><th>说明</th></tr></thead><tbody>${srcRows}</tbody></table>
     </div>
     <div class="panel">
       <h2>储备库状态</h2>
@@ -108,15 +160,125 @@ async function renderOverview(container) {
         <thead><tr><th>日期</th><th>质量分</th><th>总数</th><th>唯一</th><th>新仓库</th><th>action候选</th></tr></thead>
         <tbody>${snaps || '<tr><td colspan="6" class="empty">暂无快照</td></tr>'}</tbody>
       </table>
-    </div>
-    <div class="panel">
-      <h2>人工审核队列</h2>
-      <table><thead><tr><th>仓库</th><th>决策</th><th>状态</th></tr></thead><tbody>${reviewPrev}</tbody></table>
-    </div>
-    <div class="panel">
-      <h2>待满足需求 (pending_needs)</h2>
-      <table><thead><tr><th>需求</th><th>状态</th></tr></thead><tbody>${needsPrev}</tbody></table>
     </div>`;
+}
+
+/* ---------------- 今日汇总 (每日聚合) ---------------- */
+async function renderDigest(container) {
+  const data = await getJSON(`${API}/digest`);
+  const st = data.stats || {};
+  const cards = [
+    ["信息条目", st.total_items],
+    ["当周新项目", st.new_this_week],
+    ["action 候选", st.action_candidates],
+    ["累计 Stars", st.total_stars],
+  ].map(([label, num]) => `<div class="stat-card"><div class="num">${esc(num)}</div><div class="label">${esc(label)}</div></div>`).join("");
+
+  const decisions = Object.entries(st.decisions || {})
+    .map(([k, v]) => `<tr><td>${badge(k)}</td><td>${esc(v)}</td></tr>`).join("");
+  const cats = Object.entries(st.categories || {})
+    .map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("");
+
+  container.innerHTML = `
+    <div class="panel">
+      <h2>📅 ${esc(data.date)} 每日信息聚合</h2>
+      <p style="font-size:13px;color:var(--muted)">生成时间: ${esc(data.generated_at)}</p>
+    </div>
+    <div class="stats-grid">${cards}</div>
+    <div class="panel">
+      <h2>聚合统计</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div><h3>条件判断分布</h3><table><thead><tr><th>决策</th><th>数量</th></tr></thead><tbody>${decisions}</tbody></table></div>
+        <div><h3>分类分布</h3><table><thead><tr><th>分类</th><th>数量</th></tr></thead><tbody>${cats}</tbody></table></div>
+      </div>
+    </div>
+    ${humanFeedHTML(data, 200)}
+    `;
+}
+
+/* ---------------- 信息流 (人类优先 / AI 优先) ---------------- */
+let feedState = { mode: "human", date: "", category: "", decision: "", limit: 50, offset: 0 };
+
+async function renderFeed(container) {
+  const params = new URLSearchParams({ mode: feedState.mode, limit: feedState.limit, offset: feedState.offset });
+  if (feedState.date) params.set("date", feedState.date);
+  if (feedState.category) params.set("category", feedState.category);
+  if (feedState.decision) params.set("decision", feedState.decision);
+
+  const url = feedState.date ? `${API}/feed/${feedState.date}?${params}` : `${API}/feed?${params}`;
+  const data = await getJSON(url);
+  const meta = data.meta || {};
+  const total = meta.total || 0;
+  const totalPages = Math.max(1, Math.ceil(total / feedState.limit));
+  const curPage = Math.floor((meta.offset || 0) / feedState.limit) + 1;
+
+  let body;
+  if (feedState.mode === "ai") {
+    const items = data.items || [];
+    body = `
+      <div class="panel">
+        <h2>🤖 AI 优先信息流 <span class="muted">(机器可直接消费, 搭自动化/喂 Agent)</span></h2>
+        <pre class="ai-feed-pre" id="ai-feed-json">${esc(JSON.stringify({ meta, items }, null, 2))}</pre>
+      </div>
+      <div class="panel">
+        <h2>👁 预览 (人类可读)</h2>
+        <div class="item-grid">${items.map(itemCard).join("") || '<div class="empty">暂无条目</div>'}</div>
+      </div>`;
+  } else {
+    body = humanFeedHTML(data, feedState.limit);
+  }
+
+  container.innerHTML = `
+    <div class="toolbar">
+      <div class="mode-switch">
+        <button class="btn ${feedState.mode==='human'?'primary':'secondary'}" onclick="feedState.mode='human';feedState.offset=0;refresh('feed')">👤 人类优先</button>
+        <button class="btn ${feedState.mode==='ai'?'primary':'secondary'}" onclick="feedState.mode='ai';feedState.offset=0;refresh('feed')">🤖 AI 优先</button>
+      </div>
+      <input id="feed-date" type="date" value="${esc(feedState.date)}" onchange="feedState.date=this.value;feedState.offset=0;refresh('feed')">
+      <select id="feed-category" onchange="feedState.category=this.value;feedState.offset=0;refresh('feed')">
+        <option value="">全部分类</option>
+        <option value="mcp-servers">MCP 服务器</option>
+        <option value="ai-agents">AI 代理框架</option>
+        <option value="rag-kb">RAG 与知识库</option>
+        <option value="agent-orchestration">Agent 编排</option>
+        <option value="llm-prompts">LLM 提示词</option>
+        <option value="ai-dev-tools">AI 开发工具</option>
+        <option value="data-infra">数据基础设施</option>
+        <option value="developer-tools">开发者工具</option>
+      </select>
+      <select id="feed-decision" onchange="feedState.decision=this.value;feedState.offset=0;refresh('feed')">
+        <option value="">全部决策</option>
+        <option value="action">action</option>
+        <option value="reserve">reserve</option>
+        <option value="partial">partial</option>
+        <option value="ignore">ignore</option>
+      </select>
+      ${feedState.mode === "ai" ? `<button class="btn secondary" onclick="copyAiFeed()">📋 复制 JSON</button>` : ""}
+    </div>
+    <div class="feed-meta muted">
+      模式: <b>${feedState.mode === "human" ? "人类优先 (按分类分组)" : "AI 优先 (扁平 JSON)"}</b>
+      ${feedState.date ? ` · 日期: <b>${esc(feedState.date)}</b>` : " · 今日"}
+      · 共 <b>${total}</b> 条
+      ${feedState.mode === "ai" ? `<br><span style="font-size:12px">🔗 接口: GET /api/v1/feed${feedState.date ? "/" + feedState.date : ""}?mode=ai&limit=${feedState.limit}&offset=${feedState.offset}${feedState.category ? "&category=" + feedState.category : ""}${feedState.decision ? "&decision=" + feedState.decision : ""}</span>` : ""}
+    </div>
+    ${body}
+    <div class="pagination">
+      <button class="btn secondary" ${feedState.offset===0?'disabled':''} onclick="feedState.offset=0;refresh('feed')">首页</button>
+      <button class="btn secondary" ${feedState.offset===0?'disabled':''} onclick="feedState.offset=Math.max(0,feedState.offset-feedState.limit);refresh('feed')">上一页</button>
+      <span>第 ${curPage} / ${totalPages} 页</span>
+      <button class="btn secondary" ${curPage>=totalPages?'disabled':''} onclick="feedState.offset+=feedState.limit;refresh('feed')">下一页</button>
+    </div>`;
+}
+
+async function copyAiFeed() {
+  const pre = document.getElementById("ai-feed-json");
+  if (!pre) return;
+  try {
+    await navigator.clipboard.writeText(pre.textContent);
+    alert("✅ JSON 已复制到剪贴板, 可直接用于自动化流程");
+  } catch (e) {
+    alert("复制失败: " + e.message + " (请手动全选复制)");
+  }
 }
 
 /* ---------------- 仓库列表 ---------------- */
@@ -235,7 +397,6 @@ async function renderQuality(container) {
         ${issues ? `<ul class="issue-list">${issues}</ul>` : '<p style="color:var(--green);font-size:13px">✅ 无质量缺项</p>'}
         ${p.recommendation ? `<p style="margin-top:10px;font-size:13px;color:var(--accent)">💡 ${esc(p.recommendation)}</p>` : ""}`;
     } else {
-      // trend
       const points = p.points || [];
       const maxScore = Math.max(100, ...points.map(t => t.score || 0));
       const bars = points.map(t =>
@@ -362,13 +523,65 @@ async function reviewReject(fn) {
   refresh("review");
 }
 
+/* ---------------- 数据源 (含预留扩展位) ---------------- */
+async function renderSources(container) {
+  const data = await getJSON(`${API}/sources`);
+  const rows = (data || []).map(s => `
+    <tr>
+      <td><b>${esc(s.label)}</b><br><span class="muted">${esc(s.id)}</span></td>
+      <td><span class="badge ${esc(s.status)}">${esc(s.status)}</span></td>
+      <td>${s.enabled ? '<span style="color:var(--green)">✅ 已接入</span>' : '<span style="color:var(--yellow)">⏳ 预留扩展</span>'}</td>
+      <td>${typeBadge(s.item_type)}</td>
+      <td class="desc">${esc(s.description)}</td>
+      <td class="desc">${esc(s.note || "-")}</td>
+      <td class="desc">${esc((s.last_sync_at || "").slice(0, 19) || "-")}${s.last_items ? ` · ${esc(s.last_items)} 条` : ""}</td>
+      <td>
+        ${s.enabled ? `<button class="btn secondary" onclick="syncSource('${esc(s.id)}')">🔄 同步</button>` : `<span class="muted" style="font-size:12px">待开发</span>`}
+      </td>
+    </tr>`).join("") || '<tr><td colspan="8" class="empty">暂无数据源</td></tr>';
+
+  container.innerHTML = `
+    <div class="panel">
+      <h2>数据源注册表</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">
+        设计哲学: 一次获取、多人共享。当前已接入 GitHub 开源项目；
+        <b style="color:var(--accent)">CNB 新项目 / 论文 / 热点 / 科技新闻</b> 已预留接口，
+        将在后续 ISSUE 中接入并自动汇入每日信息流。
+      </p>
+      <table>
+        <thead><tr><th>数据源</th><th>状态</th><th>接入</th><th>类型</th><th>说明</th><th>备注</th><th>最近同步</th><th>操作</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <h2>预留接口说明 (后续 ISSUE 开发)</h2>
+      <ul class="issue-list">
+        <li>🧩 <b>CNB 新项目</b>: 纳入 CNB 平台每日新增项目 (数据源 id: cnb-projects)</li>
+        <li>📄 <b>论文</b>: arXiv 等每日新论文 (数据源 id: papers, 类型 paper)</li>
+        <li>🔥 <b>热点信息</b>: 科技热点/趋势 (数据源 id: tech-trends, 类型 trend)</li>
+        <li>📰 <b>科技进展/新闻</b>: 行业要闻 (数据源 id: news, 类型 news)</li>
+      </ul>
+      <p style="font-size:13px;color:var(--muted)">接入方式: 实现对应 fetch 并归一化为 Item (统一契约 schema_version=1.0), 即可自动汇入 <code>/api/v1/feed</code> 信息流与每日聚合。</p>
+    </div>`;
+}
+
+async function syncSource(id) {
+  if (!confirm(`确认手动同步数据源 ${id} ? (GitHub 源会重跑 fetch, 消耗 API 配额)`)) return;
+  try {
+    const res = await fetch(`${API}/sync/${id}`, { method: "POST" });
+    const data = await res.json();
+    alert(`同步结果: [${data.status}] ${data.message || ""} 条目数: ${data.items}`);
+    refresh("sources");
+  } catch (e) {
+    alert("同步失败: " + e.message);
+  }
+}
+
 /* ---------------- 自愈中心 ---------------- */
 async function renderHeal(container) {
-  // 健康检查
   let health = null;
   try { health = await getJSON(`${API}/health`); } catch (e) { health = { error: e.message }; }
 
-  // 愈合日志
   let logs = [];
   try { logs = (await getJSON(`${API}/heal/log?limit=20`)).incidents || []; } catch (e) { logs = []; }
 
@@ -376,8 +589,6 @@ async function renderHeal(container) {
   if (health.error) {
     healthHtml = `<div class="empty">❌ ${esc(health.error)}</div>`;
   } else {
-    const s = health.summary || {};
-    const statusCls = health.ok ? "ok" : "err";
     const checks = Object.entries(health.checks || {}).map(([k, v]) => `
       <tr>
         <td>${esc(k)}</td>
@@ -386,10 +597,10 @@ async function renderHeal(container) {
       </tr>`).join("");
     healthHtml = `
       <div class="status-line">
-        <span class="status-pill ${statusCls}">${health.ok ? "✅ 管道健康" : "⚠️ 存在待修复问题"}</span>
-        <span class="status-pill">high: ${esc(s.high || 0)}</span>
-        <span class="status-pill">medium: ${esc(s.medium || 0)}</span>
-        <span class="status-pill">low: ${esc(s.low || 0)}</span>
+        <span class="status-pill ${health.ok ? "ok" : "err"}">${health.ok ? "✅ 管道健康" : "⚠️ 存在待修复问题"}</span>
+        <span class="status-pill">high: ${esc(health.summary?.high || 0)}</span>
+        <span class="status-pill">medium: ${esc(health.summary?.medium || 0)}</span>
+        <span class="status-pill">low: ${esc(health.summary?.low || 0)}</span>
       </div>
       <table>
         <thead><tr><th>检查项</th><th>状态</th><th>详情</th></tr></thead>
@@ -446,12 +657,15 @@ async function runHeal(checkOnly) {
 /* ---------------- 视图切换 ---------------- */
 const VIEWS = {
   overview: renderOverview,
+  digest: renderDigest,
+  feed: renderFeed,
   repos: renderRepos,
   clusters: renderClusters,
   quality: renderQuality,
   snapshots: renderSnapshots,
   needs: renderNeeds,
   review: renderReview,
+  sources: renderSources,
   heal: renderHeal,
 };
 

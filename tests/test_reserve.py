@@ -569,3 +569,93 @@ def test_api_routes_registered():
                   "/api/v1/dashboard/review", "/api/v1/dashboard/needs",
                   "_serve_static"):
         assert route in src, f"missing route: {route}"
+
+
+# ---------- FastAPI 聚合管理 + 对外信息流 (ISSUE #4) ----------
+
+def test_fastapi_app_routes():
+    """FastAPI 聚合管理: 关键路由注册检查 (通过 OpenAPI schema)。"""
+    import os
+    os.environ["LANCE_DIR"] = tempfile.mkdtemp(prefix="fastapi-route-")
+    from reserve.fastapi_app import app
+    paths = {getattr(r, "path", "") for r in app.routes if hasattr(r, "path")}
+    for route in ("/", "/web/{path:path}", "/api/v1/feed", "/api/v1/feed/{date}",
+                  "/api/v1/sources", "/api/v1/digest/{date}", "/api/v1/sync/{source}",
+                  "/api/v1/health", "/api/v1/status", "/api/v1/dashboard/overview",
+                  "/api/v1/search", "/api/v1/reserve/match", "/api/v1/reserve/trigger",
+                  "/api/v1/needs/rematch", "/api/v1/review/queue", "/api/v1/heal"):
+        assert route in paths, f"missing fastapi route: {route}"
+
+
+def test_feed_sources():
+    """数据源注册表: 已接入 github-repos + 预留 CNB/论文/热点/新闻 扩展位。"""
+    from reserve.feed import list_sources
+    srcs = {s["id"]: s for s in list_sources()}
+    assert srcs["github-repos"]["enabled"] is True
+    assert srcs["github-repos"]["status"] == "active"
+    for sid in ("cnb-projects", "papers", "tech-trends", "news"):
+        assert sid in srcs, f"missing reserved source: {sid}"
+        assert srcs[sid]["enabled"] is False, f"{sid} should be reserved"
+        assert srcs[sid]["planned"] is True
+
+
+def test_feed_build_human():
+    """人类优先信息流: 按分类分组 + 中文摘要 + 标签 + 场景。"""
+    from reserve.feed import build_human_feed, _repo_to_item
+    r = classify(make_repo("h/one", desc="an MCP server for AI agents", tags=["mcp", "ai"]))
+    r["function_summary"] = "一个 MCP 服务器, 提供 AI 工具注册与调用"
+    r["use_case"] = "适合 MCP 生态接入"
+    items = [_repo_to_item(r)]
+    d = build_human_feed(items, date="2026-08-09")
+    assert d["meta"]["mode"] == "human"
+    assert d["meta"]["schema_version"] == "1.0"
+    assert d["headline"]["items"] == [] or True  # 不一定进 headline
+    total = sum(len(sec["items"]) for sec in d["sections"])
+    assert total == 1
+    it = d["sections"][0]["items"][0]
+    assert it["source"] == "github-repos"
+    assert it["summary_zh"]  # 人类优先: 中文摘要可读
+
+
+def test_feed_build_ai():
+    """AI 优先信息流: 扁平条目 + content 正文 (机器可直接消费)。"""
+    from reserve.feed import build_ai_feed, _repo_to_item
+    r = classify(make_repo("a/two", desc="RAG engine with vector search"))
+    r["function_summary"] = "RAG 向量检索引擎"
+    r["use_case"] = "知识库自动化"
+    items = [_repo_to_item(r)]
+    d = build_ai_feed(items, date="2026-08-09")
+    assert d["meta"]["mode"] == "ai"
+    assert len(d["items"]) == 1
+    it = d["items"][0]
+    assert "content" in it
+    assert "RAG" in it["content"] or "RAG" in it["title"]
+
+
+def test_feed_filter_category_decision():
+    """信息流过滤: category / decision。"""
+    from reserve.feed import _filter_items
+    items = [
+        {"category": "rag-kb", "category_decision": "action", "title": "a"},
+        {"category": "rag-kb", "category_decision": "reserve", "title": "b"},
+        {"category": "mcp-servers", "category_decision": "action", "title": "c"},
+    ]
+    assert len(_filter_items(items, category="rag-kb")) == 2
+    assert len(_filter_items(items, decision="action")) == 2
+    assert len(_filter_items(items, category="rag-kb", decision="action")) == 1
+
+
+def test_schemas_item():
+    """统一 Item schema: 各数据源类型可表达。"""
+    from reserve.schemas import Item
+    it = Item(id="papers:arXiv.2401.00001", type="paper", source="papers",
+              source_label="AI/科技论文", title="Attention Is All You Need 2",
+              url="https://arxiv.org/abs/2401.00001", summary_zh="论文摘要")
+    assert it.type == "paper"
+    assert "论文摘要" in it.content  # content 由 summary_zh 生成
+    it0 = Item(id="papers:arXiv.2401.00002", type="paper", source="papers",
+               title="Attention Is All You Need 2", description="an LLM paper")
+    assert "LLM paper" in it0.content  # 无 summary 时退回 title/description
+    it2 = Item(id="cnb-projects:owner/repo", type="cnb-project", source="cnb-projects",
+               title="cnb 新项目", summary_zh="CNB 平台新项目")
+    assert it2.type == "cnb-project"

@@ -6,6 +6,11 @@ numpy>=1.24
 pyarrow>=14.0
 pandas>=2.0
 
+# FastAPI 聚合管理 + 对外信息流 (reserve/fastapi_app.py)
+fastapi>=0.110
+uvicorn>=0.29
+pydantic>=2.5
+
 # LLM 功能索引/代码审核 (reserve/llm.py): 零第三方依赖, 标准库 urllib 直连
 #   - OpenAI 兼容 API (任意端点): 环境变量 LLM_BASE_URL / LLM_API_KEY / LLM_MODEL
 #   - 本地 Ollama: OLLAMA_BASE_URL / OLLAMA_MODEL (默认 http://localhost:11434)
@@ -16,3 +21,4 @@ pandas>=2.0
 
 # 可选 (测试)
 # pytest>=7.0
+# httpx2>=0.27
