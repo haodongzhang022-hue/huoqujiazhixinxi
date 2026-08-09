@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# LanceDB 储备库数据 (本地生成, 不入库)
+reserve_data/
+*.lance
+
+# 每日采集快照 (量大, 按需提交; 演示数据除外)
+pipeline/data/snapshots/*
+!pipeline/data/snapshots/demo-*.json
+
+# needs 运行时数据
+pipeline/data/needs/*.json
+!pipeline/data/needs/.gitkeep
+
+# 环境
+.env
+
+# LLM 密钥配置 (不入库; 模板 llm.json.example 保留)
+config/llm.json
+
+# 人工审核队列 (运行时生成, 不入库)
+config/review_queue.json

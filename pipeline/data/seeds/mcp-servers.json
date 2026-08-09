@@ -1,0 +1,7 @@
+{
+  "repos": [
+    "modelcontextprotocol/servers",
+    "punkpeye/awesome-mcp-servers"
+  ],
+  "_comment": "显式 allowlist: search 抓不到但明确值得跟踪的 MCP 仓库 (对应 wvb-cc-radar 的 curated/seed 机制)"
+}

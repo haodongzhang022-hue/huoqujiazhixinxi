@@ -1,0 +1,18 @@
+# 运行依赖
+# 采集层 (fetch): 零第三方依赖 (GitHub API 走标准库 urllib)
+# 储备库层 (ingest/search/trigger): 需要以下
+lancedb>=0.25
+numpy>=1.24
+pyarrow>=14.0
+pandas>=2.0
+
+# LLM 功能索引/代码审核 (reserve/llm.py): 零第三方依赖, 标准库 urllib 直连
+#   - OpenAI 兼容 API (任意端点): 环境变量 LLM_BASE_URL / LLM_API_KEY / LLM_MODEL
+#   - 本地 Ollama: OLLAMA_BASE_URL / OLLAMA_MODEL (默认 http://localhost:11434)
+#   - 或编辑 config/llm.json (模板: config/llm.json.example)
+
+# 可选 (更强 embedding): 配置 EMBEDDING_API_KEY / EMBEDDING_API_URL
+# openai>=1.0
+
+# 可选 (测试)
+# pytest>=7.0

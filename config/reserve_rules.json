@@ -1,0 +1,57 @@
+{
+  "thresholds": {
+    "action": 7,
+    "reserve": 4,
+    "eco_match": 0.5
+  },
+  "weights": {
+    "delta_24h_burst": 3,
+    "delta_7d_burst": 3,
+    "new_this_week": 1,
+    "stable_high_stars": 1,
+    "eco_match": 2,
+    "quality_active": 1,
+    "quality_not_archived": 1
+  },
+  "delta_thresholds": {
+    "delta_24h_burst": 500,
+    "delta_7d_burst": 2000,
+    "stable_stars": 10000,
+    "active_pushed_days": 30
+  },
+  "ecosystem_keywords": [
+    "mcp",
+    "model-context-protocol",
+    "agent",
+    "llm",
+    "rag",
+    "vector",
+    "knowledge",
+    "embedding",
+    "retrieval",
+    "prompt",
+    "ai",
+    "langchain",
+    "langgraph",
+    "crewai",
+    "autogen",
+    "orchestrator",
+    "workflow",
+    "claude",
+    "copilot",
+    "fine-tun",
+    "inference",
+    "dataset",
+    "pipeline"
+  ],
+  "priority_categories": [
+    "mcp-servers",
+    "ai-agents",
+    "rag-kb",
+    "agent-orchestration",
+    "llm-prompts",
+    "ai-dev-tools",
+    "data-infra",
+    "developer-tools"
+  ]
+}

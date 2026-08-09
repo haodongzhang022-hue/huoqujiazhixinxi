@@ -1,0 +1,132 @@
+{
+  "date": "2026-08-08",
+  "generated_at": "2026-08-08T14:38:15.909167+00:00",
+  "total_repos": 5,
+  "repos": [
+    {
+      "full_name": "awesome-org/agent-orchestrator",
+      "name": "agent-orchestrator",
+      "owner": "awesome-org",
+      "description": "Multi-agent orchestration framework with handoff patterns and routing",
+      "language": "Python",
+      "topics": [
+        "multi-agent",
+        "orchestration",
+        "workflow"
+      ],
+      "stargazers_count": 5200,
+      "forks_count": 310,
+      "stars_delta_24h": 180,
+      "stars_delta_7d": 1250,
+      "is_new_this_week": false,
+      "created_at": "2026-01-20T14:38:15.909167+00:00",
+      "pushed_at": "2026-08-06T14:38:15.909167+00:00",
+      "license": {
+        "spdx_id": "MIT"
+      },
+      "archived": false,
+      "html_url": "https://github.com/awesome-org/agent-orchestrator",
+      "category": "agent-orchestration"
+    },
+    {
+      "full_name": "kb-labs/rag-knowledge-engine",
+      "name": "rag-knowledge-engine",
+      "owner": "kb-labs",
+      "description": "RAG knowledge base engine with hybrid vector + keyword retrieval",
+      "language": "Go",
+      "topics": [
+        "rag",
+        "vector-db",
+        "knowledge-base",
+        "embedding"
+      ],
+      "stargazers_count": 8900,
+      "forks_count": 540,
+      "stars_delta_24h": 320,
+      "stars_delta_7d": 2100,
+      "is_new_this_week": false,
+      "created_at": "2026-04-10T14:38:15.909167+00:00",
+      "pushed_at": "2026-08-07T14:38:15.909167+00:00",
+      "license": {
+        "spdx_id": "Apache-2.0"
+      },
+      "archived": false,
+      "html_url": "https://github.com/kb-labs/rag-knowledge-engine",
+      "category": "rag-kb"
+    },
+    {
+      "full_name": "mcpworld/fast-mcp-sdk",
+      "name": "fast-mcp-sdk",
+      "owner": "mcpworld",
+      "description": "MCP server SDK with streaming, auth and tool registry",
+      "language": "TypeScript",
+      "topics": [
+        "mcp",
+        "model-context-protocol",
+        "sdk"
+      ],
+      "stargazers_count": 3400,
+      "forks_count": 190,
+      "stars_delta_24h": 95,
+      "stars_delta_7d": 780,
+      "is_new_this_week": false,
+      "created_at": "2026-06-09T14:38:15.909167+00:00",
+      "pushed_at": "2026-08-05T14:38:15.909167+00:00",
+      "license": {
+        "spdx_id": "MIT"
+      },
+      "archived": false,
+      "html_url": "https://github.com/mcpworld/fast-mcp-sdk",
+      "category": "mcp-servers"
+    },
+    {
+      "full_name": "newbiz/quantum-sim-js",
+      "name": "quantum-sim-js",
+      "owner": "newbiz",
+      "description": "Quantum computing simulator in JavaScript with web playground",
+      "language": "JavaScript",
+      "topics": [
+        "quantum",
+        "simulator"
+      ],
+      "stargazers_count": 480,
+      "forks_count": 35,
+      "stars_delta_24h": 12,
+      "stars_delta_7d": 160,
+      "is_new_this_week": true,
+      "created_at": "2026-08-05T14:38:15.909167+00:00",
+      "pushed_at": "2026-08-07T14:38:15.909167+00:00",
+      "license": {
+        "spdx_id": "MIT"
+      },
+      "archived": false,
+      "html_url": "https://github.com/newbiz/quantum-sim-js",
+      "category": "ai-applications"
+    },
+    {
+      "full_name": "toy/old-game",
+      "name": "old-game",
+      "owner": "toy",
+      "description": "A retro game engine for fun",
+      "language": "C++",
+      "topics": [
+        "game"
+      ],
+      "stargazers_count": 8,
+      "forks_count": 1,
+      "stars_delta_24h": 0,
+      "stars_delta_7d": 0,
+      "is_new_this_week": false,
+      "created_at": "2024-02-20T14:38:15.909167+00:00",
+      "pushed_at": "2025-07-04T14:38:15.909167+00:00",
+      "license": null,
+      "archived": true,
+      "html_url": "https://github.com/toy/old-game",
+      "category": "developer-tools"
+    }
+  ],
+  "meta": {
+    "query_mode": "wvb-radar-generalized-v2.1",
+    "coldstart": true
+  }
+}

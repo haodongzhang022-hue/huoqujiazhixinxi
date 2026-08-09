@@ -1,0 +1,12 @@
+{
+  "provider": "auto",
+  "base_url": "",
+  "api_key": "",
+  "model": "",
+  "ollama_base_url": "http://localhost:11434",
+  "ollama_model": "qwen2.5:7b",
+  "timeout": 90,
+  "temperature": 0.2,
+  "enrich_enabled": true,
+  "review_enabled": true
+}
