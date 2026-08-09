@@ -175,9 +175,14 @@ def api_feed_by_date(
                            category=category, decision=decision))
 
 
+@app.get("/api/v1/digest", response_model=None, tags=["对外信息流"])
 @app.get("/api/v1/digest/{date}", response_model=None, tags=["对外信息流"])
 def api_digest(date: Optional[str] = None):
-    """每日聚合摘要 (各数据源 + 统计 + 分组信息流), 供管理页「今日汇总」与外部订阅。"""
+    """每日聚合摘要 (各数据源 + 统计 + 分组信息流), 供管理页「今日汇总」与外部订阅。
+
+    GET /api/v1/digest           -> 今日
+    GET /api/v1/digest/2026-08-09 -> 指定日期
+    """
     from reserve.feed import get_feed, list_sources
     date = date or _today()
     data = get_feed(mode="human", date=date, limit=200)
@@ -209,13 +214,17 @@ def api_digest(date: Optional[str] = None):
 
 @app.post("/api/v1/sync/{source}", response_model=SourceSyncResult, tags=["对外信息流"])
 def api_sync_source(source: str, body: SyncBody | None = None):
-    """预留: 单数据源手动同步。
+    """单数据源手动同步 (ISSUE #5: 多源适配器已接入)。
 
-    当前仅 github-repos 有真实实现 (重跑 pipeline.fetch 落当日快照);
-    cnb-projects / papers / tech-trends / news 为预留位, 待后续 ISSUE 接入。
+    github-repos  -> 重跑 pipeline.fetch 落当日快照
+    cnb-projects  -> pipeline.adapters.cnb
+    papers        -> pipeline.adapters.arxiv
+    tech-trends   -> pipeline.adapters.hackernews
+    news          -> pipeline.adapters.rss
+    prediction    -> pipeline.adapters.polymarket
     """
     from reserve.feed import list_sources
-    known = {s["id"] for s in list_sources()}
+    known = {s["id"]: s for s in list_sources()}
     if source not in known:
         raise HTTPException(status_code=404, detail=f"unknown source: {source}")
 
@@ -232,10 +241,35 @@ def api_sync_source(source: str, body: SyncBody | None = None):
                                     message=f"fetch 输出: {proc.stdout[-500:]}")
         except Exception as e:
             return SourceSyncResult(source=source, status="error", items=0, message=str(e))
-    # 预留源: 返回待接入提示 (不报错, 让前端/外部知道是预留位)
+
+    # 多源适配器同步 (ISSUE #5): 映射到 pipeline/adapters/<id>.py
+    adapter_map = {
+        "cnb-projects": "cnb",
+        "papers": "arxiv",
+        "tech-trends": "hackernews",
+        "news": "rss",
+        "prediction": "polymarket",
+    }
+    adapter_id = adapter_map.get(source)
+    if adapter_id:
+        try:
+            from pipeline.adapters import fetch_one
+            from reserve.sources import load_config as load_sources_config
+            cfg = load_sources_config()
+            defaults = cfg.get("defaults", {})
+            sc = {**defaults, **(cfg.get("sources", {}).get(adapter_id, {}))}
+            res = fetch_one(adapter_id, config=sc, write_cache=True)
+            return SourceSyncResult(
+                source=source, status="active" if res["ok"] else "error",
+                items=res["count"],
+                message=res.get("error") or f"已拉取 {res['count']} 条 (适配器 {adapter_id})",
+            )
+        except Exception as e:
+            return SourceSyncResult(source=source, status="error", items=0, message=str(e))
+
     return SourceSyncResult(
         source=source, status="reserved", items=0,
-        message=f"数据源 {source} 为预留扩展位, 将在后续 ISSUE 中接入",
+        message=f"数据源 {source} 暂无对应适配器, 可在 pipeline/adapters/ 扩展",
     )
 
 

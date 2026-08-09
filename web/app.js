@@ -179,10 +179,20 @@ async function renderDigest(container) {
   const cats = Object.entries(st.categories || {})
     .map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("");
 
+  // 数据源状态条 (ISSUE #5 多源: CNB/论文/热点/新闻/预测市场)
+  const srcRows = (data.sources || []).map(s => `
+    <span class="source-chip ${s.status === 'active' ? "ok" : "reserved"}" title="${esc(s.note || "")}">
+      ${s.status === 'active' ? "✅" : "⏳"} ${esc(s.label)} · ${esc(s.last_items || 0)} 条
+    </span>`).join("");
+
   container.innerHTML = `
     <div class="panel">
       <h2>📅 ${esc(data.date)} 每日信息聚合</h2>
       <p style="font-size:13px;color:var(--muted)">生成时间: ${esc(data.generated_at)}</p>
+    </div>
+    <div class="panel">
+      <h2>数据源状态 <span style="font-size:12px;color:var(--muted)">(ISSUE #5 多源适配器)</span></h2>
+      <div class="source-chips">${srcRows || '<div class="empty">暂无数据源</div>'}</div>
     </div>
     <div class="stats-grid">${cards}</div>
     <div class="panel">
@@ -542,26 +552,23 @@ async function renderSources(container) {
 
   container.innerHTML = `
     <div class="panel">
-      <h2>数据源注册表</h2>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">
-        设计哲学: 一次获取、多人共享。当前已接入 GitHub 开源项目；
-        <b style="color:var(--accent)">CNB 新项目 / 论文 / 热点 / 科技新闻</b> 已预留接口，
-        将在后续 ISSUE 中接入并自动汇入每日信息流。
-      </p>
+      <h2>数据源注册表 <span style="font-size:12px;color:var(--muted)">(ISSUE #5 多源适配器已接入, 新增源在 pipeline/adapters/ 实现 + config/sources.json 注册)</span></h2>
       <table>
         <thead><tr><th>数据源</th><th>状态</th><th>接入</th><th>类型</th><th>说明</th><th>备注</th><th>最近同步</th><th>操作</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
     <div class="panel">
-      <h2>预留接口说明 (后续 ISSUE 开发)</h2>
+      <h2>多源适配器 (pipeline/adapters/)</h2>
       <ul class="issue-list">
-        <li>🧩 <b>CNB 新项目</b>: 纳入 CNB 平台每日新增项目 (数据源 id: cnb-projects)</li>
-        <li>📄 <b>论文</b>: arXiv 等每日新论文 (数据源 id: papers, 类型 paper)</li>
-        <li>🔥 <b>热点信息</b>: 科技热点/趋势 (数据源 id: tech-trends, 类型 trend)</li>
-        <li>📰 <b>科技进展/新闻</b>: 行业要闻 (数据源 id: news, 类型 news)</li>
+        <li>🧩 <b>CNB 新项目</b>: cnb.py — cnb search list-public-repos (每日纳入)</li>
+        <li>📄 <b>论文</b>: arxiv.py — arXiv Atom API (cs.AI/cs.CL/cs.LG/cs.SE)</li>
+        <li>🔥 <b>热点信息</b>: hackernews.py — Hacker News topstories</li>
+        <li>📰 <b>科技进展/新闻</b>: rss.py — 通用 RSS/Atom 订阅源</li>
+        <li>🎯 <b>预测市场</b>: polymarket.py — Polymarket Gamma API (概率/成交量/走向)</li>
       </ul>
-      <p style="font-size:13px;color:var(--muted)">接入方式: 实现对应 fetch 并归一化为 Item (统一契约 schema_version=1.0), 即可自动汇入 <code>/api/v1/feed</code> 信息流与每日聚合。</p>
+      <p style="font-size:13px;color:var(--muted)">统一归一化为 Item (schema_version=1.0) 自动汇入 <code>/api/v1/feed</code> 信息流与每日聚合。
+      新增 RSS 订阅源: 编辑 config/sources.json → sources.rss.feeds, 或调用 POST /api/v1/sources/feeds。</p>
     </div>`;
 }
 

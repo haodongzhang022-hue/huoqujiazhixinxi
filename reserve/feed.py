@@ -46,48 +46,56 @@ SOURCES = [
         "enabled": True,
         "planned": False,
         "note": "已接入: pipeline/fetch.py + reserve/ingest.py 每日入库",
+        "adapter": "github",
     },
     {
         "id": "cnb-projects",
         "label": "CNB 新项目",
-        "description": "CNB 平台每日新增/活跃的开源项目 (由后续 ISSUE 接入)",
-        "status": "reserved",
+        "description": "CNB 平台每日新增/活跃的开源项目 (ISSUE #5 已接入 cnb adapter)",
+        "status": "active",
         "item_type": "cnb-project",
-        "enabled": False,
-        "planned": True,
-        "note": "预留接口: 待后续 ISSUE 开发接入",
+        "enabled": True,
+        "planned": False,
+        "note": "已接入: pipeline/adapters/cnb.py (cnb search list-public-repos)",
+        "adapter": "cnb",
     },
     {
         "id": "papers",
         "label": "AI/科技论文",
-        "description": "每日新论文 (arXiv 等, 由后续 ISSUE 接入)",
-        "status": "reserved",
+        "description": "每日新论文 (ISSUE #5 已接入 arxiv adapter)",
+        "status": "active",
         "item_type": "paper",
-        "enabled": False,
-        "planned": True,
-        "note": "预留接口: 待后续 ISSUE 开发接入",
+        "enabled": True,
+        "planned": False,
+        "note": "已接入: pipeline/adapters/arxiv.py (arXiv Atom API)",
+        "adapter": "arxiv",
     },
     {
         "id": "tech-trends",
         "label": "热点与科技进展",
-        "description": "科技热点 / 产品发布 / 研究进展 (由后续 ISSUE 接入)",
-        "status": "reserved",
+        "description": "科技热点 / 产品发布 / 研究进展 (ISSUE #5 已接入 hackernews + rss)",
+        "status": "active",
         "item_type": "trend",
-        "enabled": False,
-        "planned": True,
-        "note": "预留接口: 待后续 ISSUE 开发接入",
+        "enabled": True,
+        "planned": False,
+        "note": "已接入: pipeline/adapters/hackernews.py + rss.py",
+        "adapter": "hackernews",
     },
     {
         "id": "news",
         "label": "科技新闻",
-        "description": "科技行业要闻 (由后续 ISSUE 接入)",
-        "status": "reserved",
+        "description": "科技行业要闻 (ISSUE #5 已接入 rss adapter)",
+        "status": "active",
         "item_type": "news",
-        "enabled": False,
-        "planned": True,
-        "note": "预留接口: 待后续 ISSUE 开发接入",
+        "enabled": True,
+        "planned": False,
+        "note": "已接入: pipeline/adapters/rss.py (通用 RSS/Atom)",
+        "adapter": "rss",
     },
 ]
+
+# 多源适配器缓存目录 (pipeline/data/sources/*.json, 由 reserve.sources 拉取)
+SOURCES_CACHE_DIR = ROOT / "pipeline" / "data" / "sources"
 
 # 生态分类 -> 人类可读中文名
 CATEGORY_LABELS = {
@@ -247,11 +255,21 @@ def _load_snapshot_items(date: str | None = None) -> list[dict]:
 
 
 def list_sources() -> list[dict]:
-    """数据源注册表（含预留扩展位 + 实时 last_sync 信息）。"""
+    """数据源注册表（含实时 last_sync 信息, 各源已由 ISSUE #5 适配器接入）。"""
     out = []
     for s in SOURCES:
         s = dict(s)
-        if s["id"] == "github-repos":
+        adapter_id = s.get("adapter")
+        if adapter_id:
+            cache = SOURCES_CACHE_DIR / f"{adapter_id}.json"
+            if cache.exists():
+                try:
+                    d = json.loads(cache.read_text(encoding="utf-8"))
+                    s["last_sync_at"] = d.get("fetched_at")
+                    s["last_items"] = d.get("count", 0)
+                except Exception:
+                    pass
+        elif s["id"] == "github-repos":
             snaps = sorted(SNAPSHOT_DIR.glob("*.json"), reverse=True)
             if snaps:
                 try:
@@ -264,6 +282,80 @@ def list_sources() -> list[dict]:
                     pass
         out.append(s)
     return out
+
+
+# 适配器 id -> 统一 Item 的 source/type/source_label (用于信息流归一化)
+_ADAPTER_ITEM_META = {
+    "cnb": ("cnb-projects", "cnb-project", "CNB 新项目"),
+    "github": ("github-repos", "repo", "GitHub 开源项目"),
+    "arxiv": ("papers", "paper", "AI/科技论文"),
+    "hackernews": ("tech-trends", "trend", "热点与科技进展"),
+    "polymarket": ("prediction", "trend", "预测市场"),
+    "rss": ("news", "news", "科技新闻"),
+}
+
+
+def _adapter_to_item(it: dict) -> dict | None:
+    """多源适配器 item (pipeline/data/sources/*.json) -> 统一 Item。"""
+    adapter_id = it.get("source")
+    meta = _ADAPTER_ITEM_META.get(adapter_id)
+    if not meta:
+        return None
+    source, itype, label = meta
+    extra = dict(it.get("extra") or {})
+    title = it.get("title") or ""
+    # repo 类: title 是 full_name/path
+    if itype in ("repo", "cnb-project"):
+        full_name = title
+        url = it.get("url") or ""
+    else:
+        full_name = title
+        url = it.get("url") or ""
+    return {
+        "id": f"{source}:{it.get('item_id') or title}",
+        "type": itype,
+        "source": source,
+        "source_label": label,
+        "title": title,
+        "url": url,
+        "description": it.get("summary") or "",
+        "summary_zh": it.get("summary") or "",
+        "language": extra.get("language") or "",
+        "stars": int(extra.get("stars") or it.get("score") or 0),
+        "stars_delta_24h": extra.get("stars_delta_24h"),
+        "stars_delta_7d": extra.get("stars_delta_7d"),
+        "is_new": bool(extra.get("is_new_this_week")),
+        "category": it.get("category") or "",
+        "category_decision": extra.get("category_decision") or "",
+        "function_tags": list(it.get("tags") or []),
+        "use_case": None,
+        "review": None,
+        "matched_needs": [],
+        "published_at": it.get("published_at") or "",
+        "first_seen_at": "",
+        "extra": extra,
+    }
+
+
+def _load_adapter_items() -> list[dict]:
+    """读取多源适配器缓存 (pipeline/data/sources/*.json) -> 统一 Item 列表。
+
+    覆盖: cnb / github / arxiv / hackernews / polymarket / rss。
+    缓存由 reserve.sources --fetch 或 POST /api/v1/sources/fetch 生成。
+    """
+    items: list[dict] = []
+    if not SOURCES_CACHE_DIR.exists():
+        return items
+    for cache in sorted(SOURCES_CACHE_DIR.glob("*.json")):
+        try:
+            payload = json.loads(cache.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        for raw in payload.get("items") or []:
+            it = _adapter_to_item(raw)
+            if it:
+                items.append(it)
+    return items
 
 
 def build_human_feed(items: list[dict], date: str, limit: int = 50,
@@ -383,6 +475,9 @@ def get_feed(mode: str = "human", date: str | None = None, limit: int = 50,
             items = []
         if not items:
             items = _load_snapshot_items(date)
+
+    # ISSUE #5: 追加多源适配器条目 (CNB 新项目 / 论文 / 热点 / 新闻 / 预测市场)
+    items = items + _load_adapter_items()
 
     if mode == "ai":
         return build_ai_feed(items, date, limit=limit, offset=offset,

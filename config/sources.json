@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "description": "数据源管理器配置 (ISSUE #5): 站点/获取方式会持续增加, 新增源只需在 sources 下加一项并实现 pipeline/adapters/<id>.py",
+  "defaults": {
+    "enabled": true,
+    "timeout": 20
+  },
+  "sources": {
+    "cnb": {
+      "enabled": true,
+      "top": 50,
+      "order_by": "last_updated_at",
+      "since_days": 7,
+      "min_stars": 0,
+      "note": "CNB 开源平台新项目, 纳入每日获取"
+    },
+    "github": {
+      "enabled": true,
+      "days": 3,
+      "min_stars": 0,
+      "only_decision": "",
+      "note": "包装 pipeline.fetch 每日快照, 不重复调 GitHub API"
+    },
+    "arxiv": {
+      "enabled": true,
+      "max_results": 20,
+      "categories": "cat:cs.AI OR cat:cs.CL OR cat:cs.LG OR cat:cs.SE",
+      "sort_by": "submittedDate",
+      "note": "新的论文"
+    },
+    "hackernews": {
+      "enabled": true,
+      "top": 20,
+      "min_score": 50,
+      "note": "热点信息"
+    },
+    "polymarket": {
+      "enabled": true,
+      "limit": 10,
+      "active": true,
+      "closed": false,
+      "archived": false,
+      "order": "volume24hr",
+      "note": "预测市场: 概率/成交量/走向信号 (结构化行情, 单独对接见 docs/sources-extension.md)"
+    },
+    "rss": {
+      "enabled": true,
+      "max_per_feed": 10,
+      "feeds": [
+        {
+          "name": "Hacker News RSS",
+          "url": "https://hnrss.org/frontpage",
+          "category": "news"
+        },
+        {
+          "name": "arXiv cs.AI (RSS 备用)",
+          "url": "https://rss.arxiv.org/rss/cs.AI",
+          "category": "papers"
+        }
+      ],
+      "note": "通用 RSS/Atom: 科技进展/站点更新, 用 --add-feed 或直接编辑本文件增加"
+    }
+  }
+}

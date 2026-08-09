@@ -1,13 +1,16 @@
 # 开源项目信息获取与筛选管道 (huoqujiazhixinxi)
 
-> 整合 wvb-cc-radar fetch 分层查询模型 + 条件判断分类 + LanceDB 储备库 + 条件触发引擎。
-> 目标：**每天自动获取 GitHub 新/热项目 → 归一化去重 → 功能索引 → 三分类筛选 → 存入 LanceDB 储备库 → 条件触发按需调用**。
+> 整合 wvb-cc-radar fetch 分层查询模型 + 条件判断分类 + LanceDB 储备库 + 条件触发引擎
+> + **多源数据管理器 (ISSUE #5)**。
+> 目标：**每天自动获取 GitHub/CNB 新热项目 + 论文 + 热点 + 科技进展 + 预测市场
+> → 归一化去重 → 功能索引 → 三分类筛选 → 存入 LanceDB 储备库 → 条件触发按需调用
+> → 网页「每日聚合」一页汇总科技人每日信息**。
 
 ```
-GitHub Search API (8 生态分类 × T1/T2/T3/T4 分层查询 + seed allowlist)
-        │  pipeline/fetch.py (wvb-cc-radar 模型改造)
+多源适配器 (pipeline/adapters: cnb / github / arxiv / hackernews / polymarket / rss)
+        │  reserve/sources.py (数据源管理器: 列表/拉取/聚合摘要)
         ▼
-每日快照 JSON (stars_delta_24h/7d + 冷启动推断 + action_candidate + needs 粗匹配)
+统一 item 缓存 (pipeline/data/sources/<id>.json) + 每日快照 JSON
         │  reserve/preprocessor.py (归一化 + 去重)
         ▼
 reserve/classifier.py (打分模型 → action/reserve/partial/ignore 三分类 + 功能索引)
@@ -20,7 +23,10 @@ LanceDB 储备库 (repo_reserve 表: 功能索引 + 条件判断 + embedding)
         ├── reserve/quality.py 内容质量评估 (快照/储备库/趋势 + 每日质量报告)
         ├── reserve/self_heal.py 管道自愈合 (健康检查 → 诊断 → 自动修复 → 事件日志)
         ├── reserve/dashboard.py 内容结构化整理视图 (总览/列表/能力簇/质量/快照/需求/审核)
-        └── reserve/api.py     REST API (/api/v1/reserve/* + /api/v1/needs + /api/v1/quality + /api/v1/health|heal + /api/v1/dashboard/*) + Web 管理页面 (web/)
+        ├── reserve/sources.py 多源数据管理器 (ISSUE #5)
+        └── reserve/api.py     REST API (/api/v1/reserve/* + /api/v1/needs + /api/v1/quality
+                               + /api/v1/health|heal + /api/v1/dashboard/*
+                               + /api/v1/sources/* + /api/v1/digest) + Web 管理页面 (web/)
 ```
 
 ## 快速开始
@@ -206,12 +212,14 @@ curl -X POST http://127.0.0.1:8000/api/v1/heal -H "Content-Type: application/jso
 | 页面 | 数据来源 API | 内容 |
 |---|---|---|
 | 总览 | /api/v1/dashboard/overview | 统计卡片 / 决策分布 / 分类分布 / 质量趋势图 / 快照列表 / 审核队列 / 需求 |
+| **每日聚合** | /api/v1/digest | 多源每日信息汇总 (开源项目/新论文/热点/科技进展/预测市场), 一键拉取最新 |
 | 仓库列表 | /api/v1/dashboard/repos | 分页 + 过滤 (decision/category/tag/q) + 排序 (stars/delta7d/newest/score) |
 | 能力簇 | /api/v1/dashboard/clusters | 按功能标签聚类的能力簇卡片 (每簇: 项目/星数/决策) |
 | 质量评估 | /api/v1/quality | 快照 + 储备库 + 趋势 三维质量报告与建议 |
 | 每日快照 | /api/v1/dashboard/snapshots | 最近 30 天快照的质量分/数量/问题 |
 | 需求 | /api/v1/dashboard/needs | pending_needs 列表 + 一键重匹配 |
 | 审核队列 | /api/v1/dashboard/review | action 候选审核 + 通过/拒绝操作 |
+| **数据源管理** | /api/v1/sources + /api/v1/sources/fetch + /api/v1/sources/enable + /api/v1/sources/feeds | 数据源启停 / 单源拉取 / 新增 RSS 订阅源 |
 | 自愈中心 | /api/v1/health + /api/v1/heal + /api/v1/heal/log | 健康检查 / 一键自愈 / 愈合日志 |
 
 ### FastAPI 聚合管理 + 对外信息流 (fastapi_app.py + feed.py + schemas.py)
@@ -232,6 +240,29 @@ curl -X POST http://127.0.0.1:8000/api/v1/heal -H "Content-Type: application/jso
 | 需求 | /api/v1/dashboard/needs | pending_needs + 重匹配 |
 | 审核队列 | /api/v1/dashboard/review | LLM 审核 + 人工确认 |
 | 自愈中心 | /api/v1/health + /api/v1/heal | 健康检查 + 自动修复 |
+
+### 多源数据管理器 (sources.py + pipeline/adapters/, ISSUE #5)
+
+> 站点和获取方式会持续增加 —— 新增数据源只需在 `pipeline/adapters/` 实现一个 Adapter
+> 并在 `config/sources.json` 注册, 无需改主流程与页面。
+
+| 数据源 | 适配器 | 类别 | 数据来源 |
+|---|---|---|---|
+| CNB 开源平台新项目 | cnb.py | repos | `cnb search list-public-repos` (每日纳入) |
+| GitHub 开源项目 | github.py | repos | 包装 pipeline.fetch 每日快照 |
+| arXiv 论文 | arxiv.py | papers | export.arxiv.org Atom API |
+| Hacker News 热点 | hackernews.py | news | HN Firebase API |
+| 预测市场 | polymarket.py | prediction | Polymarket Gamma API (概率/成交量/走向) |
+| RSS/Atom 订阅源 | rss.py | tech/news/... | 任意 RSS (科技进展/站点更新) |
+
+统一 item 结构: `source / item_id / title / url / summary / published_at / category / tags / score / extra`。
+缓存: `pipeline/data/sources/<id>.json` (离线可读, 页面优先读缓存)。
+管理 API: `GET /api/v1/sources` (列表) · `POST /api/v1/sources/fetch` (拉取) ·
+`POST /api/v1/sources/enable` (启停) · `POST /api/v1/sources/config` (配置) ·
+`POST /api/v1/sources/feeds` (新增 RSS 源) · `GET /api/v1/digest` (聚合摘要)。
+
+> ⚠️ 预测市场数据是**结构化行情** (概率/成交量/多空), 不是文章; 页面上以预测事件卡片
+> 展示, 单独对接成数据信息需要专项开发, 方案见 `docs/sources-extension.md` §6。
 
 ### fetch 采集层 (wvb-cc-radar 模型改造)
 
@@ -301,19 +332,31 @@ reserve/
 ├── schemas.py         统一信息条目/数据源/信息流 数据契约 (Pydantic, schema_version=1.0)
 ├── feed.py            人类优先/AI 优先 信息流 (对外公开, 一次获取多人共享, 含预留扩展位)
 ├── fastapi_app.py     FastAPI 聚合管理 + 对外信息流 API + 兼容既有 REST
+├── sources.py         多源数据管理器 (ISSUE #5: 适配器视图/拉取调度/聚合摘要/启停配置)
 ├── ingest.py          fetch→classify→LLM增强→LLM审核→embed→入库 端到端管道
 ├── search.py          全文/向量/混合检索
 ├── trigger.py         条件触发引擎 + needs 双向生长回路
-└── api.py             (旧) http.server REST API + Web 静态托管 (兼容保留)
+└── api.py             (旧) http.server REST API + Web 静态托管 (兼容保留, 含 /api/v1/sources/* + /api/v1/digest)
+
+pipeline/adapters/      多源适配器框架 (ISSUE #5: 站点/获取方式持续增加, 每个新源一个文件)
+├── __init__.py         注册表导出
+├── base.py             Adapter 基类 + Registry + 归一化 + fetch_all/fetch_one
+├── cnb.py              CNB 开源平台新项目 (cnb search list-public-repos)
+├── github.py           包装 pipeline.fetch 每日快照
+├── arxiv.py            arXiv 论文 (Atom API)
+├── hackernews.py       Hacker News 热点
+├── polymarket.py       预测市场 (Polymarket Gamma API: 概率/成交量)
+└── rss.py              通用 RSS/Atom 订阅源 (科技进展/站点更新)
 
 web/
 ├── index.html         聚合管理台入口 (总览/今日汇总/信息流/仓库/能力簇/质量/快照/需求/审核/数据源/自愈)
-├── app.js             前端逻辑 (原生 JS, 调用 /api/v1/feed + /api/v1/dashboard/*)
-└── style.css          管理台样式 (深色主题, 信息流卡片/数据源徽章/AI JSON 展示)
+├── app.js             前端逻辑 (原生 JS, 调用 /api/v1/feed + /api/v1/dashboard/* + /api/v1/sources)
+└── style.css          管理台样式 (深色主题, 信息流卡片/数据源徽章/每日聚合卡片/AI JSON 展示)
 
 config/
 ├── reserve_rules.json 条件判断规则 (热更新)
 ├── self_heal.json     自愈合策略 (自动重采集/重建索引/清理开关)
+├── sources.json       数据源管理器配置 (启停/参数/RSS 订阅源列表, 热更新)
 ├── llm.json           自定义 LLM 配置 (API/本地模型, 不入库)
 └── llm.json.example   配置模板
 
@@ -322,7 +365,7 @@ data/
 └── heal_log.json      自愈事件日志 (保留 30 天)
 
 tests/
-└── test_reserve.py    单元测试 (34 项, 无需 pytest)
+└── test_reserve.py    单元测试 (43 项, 无需 pytest)
 
 .github/workflows/
 └── daily-fetch.yml    每日 08:00 定时采集+入库+质量评估+自愈+重匹配
@@ -331,7 +374,7 @@ tests/
 ## 测试
 
 ```bash
-python tests/test_reserve.py    # 40/40 通过
+python tests/test_reserve.py    # 43/43 通过
 ```
 
 ## LLM 接入（自定义 API / 本地大模型）

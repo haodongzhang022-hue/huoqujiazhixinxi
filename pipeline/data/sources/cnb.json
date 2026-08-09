@@ -1,0 +1,1216 @@
+{
+  "source": "cnb",
+  "fetched_at": "2026-08-09T18:40:49.645841+00:00",
+  "count": 19,
+  "items": [
+    {
+      "source": "cnb",
+      "item_id": "abe.zmx/minimaxh3",
+      "title": "abe.zmx/minimaxh3",
+      "url": "https://cnb.cool/abe.zmx/minimaxh3",
+      "summary": "",
+      "published_at": "2026-08-09T09:46:00+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086388517538508800",
+        "name": "minimaxh3",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-09T09:46:00Z",
+        "updated_at": "2026-08-09T18:38:23Z",
+        "description": "",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T18:38:22Z",
+        "web_url": "https://cnb.cool/abe.zmx/minimaxh3",
+        "path": "abe.zmx/minimaxh3",
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "",
+          "color": ""
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.cwue1Ag2BJA",
+        "last_update_nickname": "Abe"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "north-2026_824/North",
+      "title": "north-2026_824/North",
+      "url": "https://cnb.cool/north-2026_824/North",
+      "summary": "本地用秋叶 云上一点通\n已更新版本，支持海螺AI开源的-MiniMax-H3视频模型！\nComfyui一点通，无需配置，点击即玩！\n整合包内置了超多的模型，大量的插件节点，以及插件配套模型，无论你是娱乐学习，还是创意作者，或者专业工作，本仓库都能满足，体验一站式AI畅玩。",
+      "published_at": "2026-08-09T18:35:12+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "Python",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086521692084244480",
+        "name": "North",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-09T18:35:12Z",
+        "updated_at": "2026-08-09T18:35:12Z",
+        "description": "本地用秋叶 云上一点通\n已更新版本，支持海螺AI开源的-MiniMax-H3视频模型！\nComfyui一点通，无需配置，点击即玩！\n整合包内置了超多的模型，大量的插件节点，以及插件配套模型，无论你是娱乐学习，还是创意作者，或者专业工作，本仓库都能满足，体验一站式AI畅玩。",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T18:35:11Z",
+        "web_url": "https://cnb.cool/north-2026_824/North",
+        "path": "north-2026_824/North",
+        "forked_from_repo": {
+          "resource_id": 1917052087602118700,
+          "resource_type": 1,
+          "path": "SKDZSS90/ComfyUI-yi_dian_tong",
+          "created_at": "0001-01-01T00:00:00Z",
+          "updated_at": "0001-01-01T00:00:00Z"
+        },
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "Python",
+          "color": "#3572A5"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.cQfnfAFvBfAA",
+        "last_update_nickname": "北城柳絮飞（没回消息直接电话）"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "sdf_2025/comfyui",
+      "title": "sdf_2025/comfyui",
+      "url": "https://cnb.cool/sdf_2025/comfyui",
+      "summary": "CNB平台爽用ComfyUI最佳方案：\n告别Docker构建，像用本地一样爽！新手友好\n增删模型、工作流、节点、依赖然后同步即可，无需构建镜像。\nComfyUI_CPU版在这里：https://cnb.cool/fuliai/comfyui_cpu\n\n【CNB使用ComfyUI最佳实践】(自封)\n【交流群：https://cnb.cool/fuliai/comfyui/-/issues/11】",
+      "published_at": "2026-08-08T17:50:20+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "Python",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086148012300832768",
+        "name": "comfyui",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-08T17:50:20Z",
+        "updated_at": "2026-08-09T18:33:38Z",
+        "description": "CNB平台爽用ComfyUI最佳方案：\n告别Docker构建，像用本地一样爽！新手友好\n增删模型、工作流、节点、依赖然后同步即可，无需构建镜像。\nComfyUI_CPU版在这里：https://cnb.cool/fuliai/comfyui_cpu\n\n【CNB使用ComfyUI最佳实践】(自封)\n【交流群：https://cnb.cool/fuliai/comfyui/-/issues/11】",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T18:33:38Z",
+        "web_url": "https://cnb.cool/sdf_2025/comfyui",
+        "path": "sdf_2025/comfyui",
+        "forked_from_repo": {
+          "resource_id": 1879873278850916400,
+          "resource_type": 1,
+          "path": "fuliai/comfyui",
+          "created_at": "0001-01-01T00:00:00Z",
+          "updated_at": "0001-01-01T00:00:00Z"
+        },
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "Python",
+          "color": "#3572A5"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.bMaGzn9qAEA",
+        "last_update_nickname": "胡承哲"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "yypc168/jerry",
+      "title": "yypc168/jerry",
+      "url": "https://cnb.cool/yypc168/jerry",
+      "summary": "",
+      "published_at": "2026-08-07T12:34:25+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "HTML",
+        "open_issues": 1,
+        "open_prs": 4,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2085706124259373056",
+        "name": "jerry",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-07T12:34:25Z",
+        "updated_at": "2026-08-09T18:31:00Z",
+        "description": "",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T18:31:00Z",
+        "web_url": "https://cnb.cool/yypc168/jerry",
+        "path": "yypc168/jerry",
+        "tags": null,
+        "open_issue_count": 1,
+        "open_pull_request_count": 4,
+        "languages": {
+          "language": "HTML",
+          "color": "#e34c26"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.cEv6c8JswEA",
+        "last_update_nickname": "夜雨飘澄"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "ding2026/NPC",
+      "title": "ding2026/NPC",
+      "url": "https://cnb.cool/ding2026/NPC",
+      "summary": "热门NPC实时更新",
+      "published_at": "2026-08-07T04:28:33+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "HTML",
+        "open_issues": 1,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2085583849577132032",
+        "name": "NPC",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-07T04:28:33Z",
+        "updated_at": "2026-08-09T18:30:17Z",
+        "description": "热门NPC实时更新",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T18:30:17Z",
+        "web_url": "https://cnb.cool/ding2026/NPC",
+        "path": "ding2026/NPC",
+        "tags": null,
+        "open_issue_count": 1,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "HTML",
+          "color": "#e34c26"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.cEPcLaCswEA",
+        "last_update_nickname": "东"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "ComfyUI_dxinlai/comfyui-2035ai",
+      "title": "ComfyUI_dxinlai/comfyui-2035ai",
+      "url": "https://cnb.cool/ComfyUI_dxinlai/comfyui-2035ai",
+      "summary": "【基础功能】含下述模型\n[checkpoint] flux1-dev-fp8, sd_xl_base_1.0, sd_xl_refiner_1.0, v1-5-pruned-emaonly-fp16\n[clip] clip_g.fp16, clip_l.fp16, t5xxl_fp16, t5xxl_fp8_e4m3fn\n[controlnet] control_v11p_sd15_openpose_fp16\n[unet] flux1-dev\n[vae] flux.ae",
+      "published_at": "2026-08-09T18:24:51+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "Shell",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086519088327430144",
+        "name": "comfyui-2035ai",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-09T18:24:51Z",
+        "updated_at": "2026-08-09T18:24:51Z",
+        "description": "【基础功能】含下述模型\n[checkpoint] flux1-dev-fp8, sd_xl_base_1.0, sd_xl_refiner_1.0, v1-5-pruned-emaonly-fp16\n[clip] clip_g.fp16, clip_l.fp16, t5xxl_fp16, t5xxl_fp8_e4m3fn\n[controlnet] control_v11p_sd15_openpose_fp16\n[unet] flux1-dev\n[vae] flux.ae",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T18:24:51Z",
+        "web_url": "https://cnb.cool/ComfyUI_dxinlai/comfyui-2035ai",
+        "path": "ComfyUI_dxinlai/comfyui-2035ai",
+        "forked_from_repo": {
+          "resource_id": 1947217452483498000,
+          "resource_type": 1,
+          "path": "2035ai/comfyui-2035ai",
+          "created_at": "0001-01-01T00:00:00Z",
+          "updated_at": "0001-01-01T00:00:00Z"
+        },
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "Shell",
+          "color": "#89e051"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.cQPuKxMswEA",
+        "last_update_nickname": "Ð"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "TJF19770107/orca-jiedan",
+      "title": "TJF19770107/orca-jiedan",
+      "url": "https://cnb.cool/TJF19770107/orca-jiedan",
+      "summary": "企业微信群定制接单项目 | ORCA业务赛道",
+      "published_at": "2026-08-05T18:03:20+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 1.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "Python",
+        "open_issues": 5,
+        "open_prs": 2,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2085064120995287040",
+        "name": "orca-jiedan",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "NPC,Skills",
+        "created_at": "2026-08-05T18:03:20Z",
+        "updated_at": "2026-08-09T18:23:48Z",
+        "description": "企业微信群定制接单项目 | ORCA业务赛道",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 1,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 8,
+        "npc_merged_pull_count": 7,
+        "npc_builded_count": 42,
+        "last_updated_at": "2026-08-09T18:23:47Z",
+        "web_url": "https://cnb.cool/TJF19770107/orca-jiedan",
+        "path": "TJF19770107/orca-jiedan",
+        "tags": null,
+        "open_issue_count": 5,
+        "open_pull_request_count": 2,
+        "languages": {
+          "language": "Python",
+          "color": "#3572A5"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.bMwxU6vpAHA",
+        "last_update_nickname": "汤嘉锋",
+        "skill_scan_status": "unknown"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "dongdongxiaozu/huoqujiazhixinxi",
+      "title": "dongdongxiaozu/huoqujiazhixinxi",
+      "url": "https://cnb.cool/dongdongxiaozu/huoqujiazhixinxi",
+      "summary": "自动获取有价值的信息",
+      "published_at": "2026-08-06T09:12:44+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "MIT",
+        "language": "Python",
+        "open_issues": 5,
+        "open_prs": 3,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2085292978098819072",
+        "name": "huoqujiazhixinxi",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-06T09:12:44Z",
+        "updated_at": "2026-08-09T18:16:29Z",
+        "description": "自动获取有价值的信息",
+        "site": "",
+        "topics": "",
+        "license": "MIT",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T18:31:43Z",
+        "web_url": "https://cnb.cool/dongdongxiaozu/huoqujiazhixinxi",
+        "path": "dongdongxiaozu/huoqujiazhixinxi",
+        "tags": null,
+        "open_issue_count": 5,
+        "open_pull_request_count": 3,
+        "languages": {
+          "language": "Python",
+          "color": "#3572A5"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.c8uGWZu7gHA",
+        "last_update_nickname": "山东予路 张浩东"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "azrb/lingran-auth-center",
+      "title": "azrb/lingran-auth-center",
+      "url": "https://cnb.cool/azrb/lingran-auth-center",
+      "summary": "在线授权系统，面向个人自建项目的鉴权服务，统一管理授权凭证，校验域名，维护版本更新资源，为各类自研小工具提供鉴权校验与在线升级能力",
+      "published_at": "2026-08-08T22:22:41+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "Python",
+        "open_issues": 1,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086216554987012096",
+        "name": "lingran-auth-center",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-08T22:22:41Z",
+        "updated_at": "2026-08-09T18:10:36Z",
+        "description": "在线授权系统，面向个人自建项目的鉴权服务，统一管理授权凭证，校验域名，维护版本更新资源，为各类自研小工具提供鉴权校验与在线升级能力",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T18:10:36Z",
+        "web_url": "https://cnb.cool/azrb/lingran-auth-center",
+        "path": "azrb/lingran-auth-center",
+        "tags": null,
+        "open_issue_count": 1,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "Python",
+          "color": "#3572A5"
+        },
+        "second_languages": {
+          "language": "HTML",
+          "color": "#e34c26"
+        },
+        "last_update_username": "cnb.cEftq9WYhJA",
+        "last_update_nickname": "泠然"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "lei/worker",
+      "title": "lei/worker",
+      "url": "https://cnb.cool/lei/worker",
+      "summary": "",
+      "published_at": "2026-08-08T15:35:02+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "NOASSERTION",
+        "language": "TypeScript",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086113963005878272",
+        "name": "worker",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-08T15:35:02Z",
+        "updated_at": "2026-08-09T18:09:12Z",
+        "description": "",
+        "site": "",
+        "topics": "",
+        "license": "NOASSERTION",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T18:09:12Z",
+        "web_url": "https://cnb.cool/lei/worker",
+        "path": "lei/worker",
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "TypeScript",
+          "color": "#3178c6"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "wolone",
+        "last_update_nickname": "镭"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "jinbufenzi/radar-dashboard",
+      "title": "jinbufenzi/radar-dashboard",
+      "url": "https://cnb.cool/jinbufenzi/radar-dashboard",
+      "summary": "",
+      "published_at": "2026-08-09T16:21:32+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "MIT",
+        "language": "HTML",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086488052805025792",
+        "name": "radar-dashboard",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-09T16:21:32Z",
+        "updated_at": "2026-08-09T18:08:19Z",
+        "description": "",
+        "site": "",
+        "topics": "",
+        "license": "MIT",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T18:08:19Z",
+        "web_url": "https://cnb.cool/jinbufenzi/radar-dashboard",
+        "path": "jinbufenzi/radar-dashboard",
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "HTML",
+          "color": "#e34c26"
+        },
+        "second_languages": {
+          "language": "Python",
+          "color": "#3572A5"
+        },
+        "last_update_username": "1126020877",
+        "last_update_nickname": "李雪含"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "mutong.ctm/kakashi",
+      "title": "mutong.ctm/kakashi",
+      "url": "https://cnb.cool/mutong.ctm/kakashi",
+      "summary": "卡卡西扩展",
+      "published_at": "2026-08-08T10:03:43+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "Lua",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086030585567256576",
+        "name": "kakashi",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-08T10:03:43Z",
+        "updated_at": "2026-08-09T18:00:01Z",
+        "description": "卡卡西扩展",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T18:00:01Z",
+        "web_url": "https://cnb.cool/mutong.ctm/kakashi",
+        "path": "mutong.ctm/kakashi",
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "Lua",
+          "color": "#000080"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.cIP3JDwrwHA",
+        "last_update_nickname": "沐一一"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "aiwork123/ComfyUI-yi_dian_tong",
+      "title": "aiwork123/ComfyUI-yi_dian_tong",
+      "url": "https://cnb.cool/aiwork123/ComfyUI-yi_dian_tong",
+      "summary": "本地用秋叶 云上一点通\n已更新版本，支持海螺AI开源的-MiniMax-H3视频模型！\nComfyui一点通，无需配置，点击即玩！\n整合包内置了超多的模型，大量的插件节点，以及插件配套模型，无论你是娱乐学习，还是创意作者，或者专业工作，本仓库都能满足，体验一站式AI畅玩。",
+      "published_at": "2026-08-09T17:55:30+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "Python",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086511703181508608",
+        "name": "ComfyUI-yi_dian_tong",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-09T17:55:30Z",
+        "updated_at": "2026-08-09T17:55:30Z",
+        "description": "本地用秋叶 云上一点通\n已更新版本，支持海螺AI开源的-MiniMax-H3视频模型！\nComfyui一点通，无需配置，点击即玩！\n整合包内置了超多的模型，大量的插件节点，以及插件配套模型，无论你是娱乐学习，还是创意作者，或者专业工作，本仓库都能满足，体验一站式AI畅玩。",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T17:55:30Z",
+        "web_url": "https://cnb.cool/aiwork123/ComfyUI-yi_dian_tong",
+        "path": "aiwork123/ComfyUI-yi_dian_tong",
+        "forked_from_repo": {
+          "resource_id": 1917052087602118700,
+          "resource_type": 1,
+          "path": "SKDZSS90/ComfyUI-yi_dian_tong",
+          "created_at": "0001-01-01T00:00:00Z",
+          "updated_at": "0001-01-01T00:00:00Z"
+        },
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "Python",
+          "color": "#3572A5"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.cYWzAjLvwFA",
+        "last_update_nickname": "王手"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "hu06.com/vibe-talk",
+      "title": "hu06.com/vibe-talk",
+      "url": "https://cnb.cool/hu06.com/vibe-talk",
+      "summary": "一个安静、低压力、可长期回看的私人声音复盘工作台\n把工作复盘、生活观察、技术判断、灵感和演讲练习说出来。\nQuiet Log 会在本地实时识别你的表达，并将它整理为文字稿、思维导图和 AI 讲义。",
+      "published_at": "2026-08-09T17:54:55+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "Python",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086511557188165632",
+        "name": "vibe-talk",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-09T17:54:55Z",
+        "updated_at": "2026-08-09T17:54:56Z",
+        "description": "一个安静、低压力、可长期回看的私人声音复盘工作台\n把工作复盘、生活观察、技术判断、灵感和演讲练习说出来。\nQuiet Log 会在本地实时识别你的表达，并将它整理为文字稿、思维导图和 AI 讲义。",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T17:54:55Z",
+        "web_url": "https://cnb.cool/hu06.com/vibe-talk",
+        "path": "hu06.com/vibe-talk",
+        "forked_from_repo": {
+          "resource_id": 2086091066916909000,
+          "resource_type": 1,
+          "path": "onmicrosoft/vibe-talk",
+          "created_at": "0001-01-01T00:00:00Z",
+          "updated_at": "0001-01-01T00:00:00Z"
+        },
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "Python",
+          "color": "#3572A5"
+        },
+        "second_languages": {
+          "language": "TypeScript",
+          "color": "#3178c6"
+        },
+        "last_update_username": "MGS_CRAZY",
+        "last_update_nickname": "浪疯Koru"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "o0.pw/ModelBridge",
+      "title": "o0.pw/ModelBridge",
+      "url": "https://cnb.cool/o0.pw/ModelBridge",
+      "summary": "基于 Go/Gin 的 LLM API 协议转换代理。同时暴露 OpenAI Chat、OpenAI Responses、Claude Messages、Gemini、Ollama 五种协议入口，通过共享 IR 星型架构实现任意协议互转，转发到单一上游。支持 SSE 流式、工具调用、多模态图片，可作为独立服务或 Go 库使用。",
+      "published_at": "2026-08-09T17:52:19+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "Apache-2.0",
+        "language": "Go",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086510902123315200",
+        "name": "ModelBridge",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-09T17:52:19Z",
+        "updated_at": "2026-08-09T17:52:19Z",
+        "description": "基于 Go/Gin 的 LLM API 协议转换代理。同时暴露 OpenAI Chat、OpenAI Responses、Claude Messages、Gemini、Ollama 五种协议入口，通过共享 IR 星型架构实现任意协议互转，转发到单一上游。支持 SSE 流式、工具调用、多模态图片，可作为独立服务或 Go 库使用。",
+        "site": "",
+        "topics": "",
+        "license": "Apache-2.0",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T17:52:19Z",
+        "web_url": "https://cnb.cool/o0.pw/ModelBridge",
+        "path": "o0.pw/ModelBridge",
+        "forked_from_repo": {
+          "resource_id": 2062366283420594200,
+          "resource_type": 1,
+          "path": "Bring/Project/Gateways/ModelBridge",
+          "created_at": "0001-01-01T00:00:00Z",
+          "updated_at": "0001-01-01T00:00:00Z"
+        },
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "Go",
+          "color": "#00ADD8"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "o0.pw",
+        "last_update_nickname": "Jacky"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "star_fu/cnb-push-test-tmp",
+      "title": "star_fu/cnb-push-test-tmp",
+      "url": "https://cnb.cool/star_fu/cnb-push-test-tmp",
+      "summary": "write-permission-test",
+      "published_at": "2026-08-09T17:47:45+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086509750680461312",
+        "name": "cnb-push-test-tmp",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-09T17:47:45Z",
+        "updated_at": "2026-08-09T17:47:45Z",
+        "description": "write-permission-test",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T17:47:45Z",
+        "web_url": "https://cnb.cool/star_fu/cnb-push-test-tmp",
+        "path": "star_fu/cnb-push-test-tmp",
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "",
+          "color": ""
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.bEoX8zxmQFA",
+        "last_update_nickname": "繁星"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "block_world/pvz-java",
+      "title": "block_world/pvz-java",
+      "url": "https://cnb.cool/block_world/pvz-java",
+      "summary": "",
+      "published_at": "2026-08-08T17:41:56+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 1.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "Java",
+        "open_issues": 1,
+        "open_prs": 1,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086145898598244352",
+        "name": "pvz-java",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-08T17:41:56Z",
+        "updated_at": "2026-08-09T17:47:25Z",
+        "description": "",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 1,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T17:47:24Z",
+        "web_url": "https://cnb.cool/block_world/pvz-java",
+        "path": "block_world/pvz-java",
+        "tags": null,
+        "open_issue_count": 1,
+        "open_pull_request_count": 1,
+        "languages": {
+          "language": "Java",
+          "color": "#b07219"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.c8eFFcg3BIA",
+        "last_update_nickname": "阿白_awithe"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "LCKYY/comfyuilc",
+      "title": "LCKYY/comfyuilc",
+      "url": "https://cnb.cool/LCKYY/comfyuilc",
+      "summary": "CNB平台爽用ComfyUI最佳方案：\n告别Docker构建，像用本地一样爽！新手友好\n增删模型、工作流、节点、依赖然后同步即可，无需构建镜像。\nComfyUI_CPU版在这里：https://cnb.cool/fuliai/comfyui_cpu\n\n【CNB使用ComfyUI最佳实践】(自封)\n【交流群：https://cnb.cool/fuliai/comfyui/-/issues/11】",
+      "published_at": "2026-08-09T17:46:16+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "Python",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086509378417213440",
+        "name": "comfyuilc",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-09T17:46:16Z",
+        "updated_at": "2026-08-09T17:46:16Z",
+        "description": "CNB平台爽用ComfyUI最佳方案：\n告别Docker构建，像用本地一样爽！新手友好\n增删模型、工作流、节点、依赖然后同步即可，无需构建镜像。\nComfyUI_CPU版在这里：https://cnb.cool/fuliai/comfyui_cpu\n\n【CNB使用ComfyUI最佳实践】(自封)\n【交流群：https://cnb.cool/fuliai/comfyui/-/issues/11】",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T17:46:16Z",
+        "web_url": "https://cnb.cool/LCKYY/comfyuilc",
+        "path": "LCKYY/comfyuilc",
+        "forked_from_repo": {
+          "resource_id": 1879873278850916400,
+          "resource_type": 1,
+          "path": "fuliai/comfyui",
+          "created_at": "0001-01-01T00:00:00Z",
+          "updated_at": "0001-01-01T00:00:00Z"
+        },
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "Python",
+          "color": "#3572A5"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.cQfgBnK4gJA",
+        "last_update_nickname": "凌晨"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "dicikyle/school",
+      "title": "dicikyle/school",
+      "url": "https://cnb.cool/dicikyle/school",
+      "summary": "",
+      "published_at": "2026-08-09T05:29:32+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "Python",
+        "open_issues": 1,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086323974027493376",
+        "name": "school",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-09T05:29:32Z",
+        "updated_at": "2026-08-09T17:45:38Z",
+        "description": "",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T17:45:38Z",
+        "web_url": "https://cnb.cool/dicikyle/school",
+        "path": "dicikyle/school",
+        "tags": null,
+        "open_issue_count": 1,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "Python",
+          "color": "#3572A5"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "diciky",
+        "last_update_nickname": "fཻoཻxཻ"
+      }
+    }
+  ]
+}

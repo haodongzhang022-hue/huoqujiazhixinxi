@@ -32,6 +32,10 @@ jobs:
         run: |
           python -m reserve.self_heal --check-only || true
 
+      - name: 多源聚合拉取 (ISSUE #5: CNB/arXiv/HN/预测市场/RSS)
+        run: |
+          python -m reserve.sources --fetch || true
+
       - name: 采集 (GitHub Search API)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -68,6 +72,6 @@ jobs:
         run: |
           git config user.name "CodeBuddy NPC"
           git config user.email "npc@cnb.cool"
-          git add pipeline/data/snapshots/ reserve_data/ data/ config/review_queue.json 2>/dev/null || true
+          git add pipeline/data/snapshots/ reserve_data/ data/ config/review_queue.json pipeline/data/sources/ 2>/dev/null || true
           git commit -m "chore: daily reserve snapshot $(date +%Y-%m-%d)" --allow-empty || true
           git push || true

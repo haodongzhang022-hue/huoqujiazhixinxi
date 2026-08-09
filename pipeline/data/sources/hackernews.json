@@ -1,0 +1,446 @@
+{
+  "source": "hackernews",
+  "fetched_at": "2026-08-09T18:47:21.573074+00:00",
+  "count": 10,
+  "items": [
+    {
+      "source": "hackernews",
+      "item_id": "49232318",
+      "title": "Criminal Deception in Silicon Valley",
+      "url": "https://pubsonline.informs.org/doi/full/10.1287/orsc.2024.19981",
+      "summary": "",
+      "published_at": "2026-08-09T15:26:45+00:00",
+      "category": "news",
+      "tags": [
+        "hackernews",
+        "hot"
+      ],
+      "score": 124.0,
+      "extra": {
+        "platform": "hackernews",
+        "comments": 54,
+        "by": "iamnothere"
+      },
+      "raw": {
+        "by": "iamnothere",
+        "descendants": 54,
+        "id": 49232318,
+        "kids": [
+          49234215,
+          49233452,
+          49233124,
+          49233270,
+          49234044,
+          49234075,
+          49234064,
+          49233747,
+          49233252,
+          49233863,
+          49233938,
+          49234026,
+          49233106,
+          49234003,
+          49233502,
+          49233224
+        ],
+        "score": 124,
+        "time": 1786289205,
+        "title": "Criminal Deception in Silicon Valley",
+        "type": "story",
+        "url": "https://pubsonline.informs.org/doi/full/10.1287/orsc.2024.19981"
+      }
+    },
+    {
+      "source": "hackernews",
+      "item_id": "49231154",
+      "title": "Mea Culpa – Dark Hours",
+      "url": "https://blog.terrygodier.com/2026/08/09/mea-culpa-dark-hours.html",
+      "summary": "",
+      "published_at": "2026-08-09T13:20:43+00:00",
+      "category": "news",
+      "tags": [
+        "hackernews",
+        "hot"
+      ],
+      "score": 390.0,
+      "extra": {
+        "platform": "hackernews",
+        "comments": 176,
+        "by": "satvikpendem"
+      },
+      "raw": {
+        "by": "satvikpendem",
+        "descendants": 176,
+        "id": 49231154,
+        "kids": [
+          49231407,
+          49234266,
+          49231394,
+          49231373,
+          49234144,
+          49231705,
+          49231571,
+          49232888,
+          49233078,
+          49232090,
+          49232563,
+          49233523,
+          49233904,
+          49232020,
+          49232008,
+          49231889,
+          49232387,
+          49232241,
+          49231599,
+          49231964,
+          49232379,
+          49231480,
+          49232654,
+          49231487,
+          49232630,
+          49231938,
+          49232781,
+          49231423,
+          49231383,
+          49231784,
+          49232370,
+          49231815,
+          49231654,
+          49231453,
+          49233340,
+          49231657,
+          49233735,
+          49231670,
+          49231708,
+          49231357,
+          49231428,
+          49231425
+        ],
+        "score": 390,
+        "time": 1786281643,
+        "title": "Mea Culpa – Dark Hours",
+        "type": "story",
+        "url": "https://blog.terrygodier.com/2026/08/09/mea-culpa-dark-hours.html"
+      }
+    },
+    {
+      "source": "hackernews",
+      "item_id": "49231809",
+      "title": "Cool URIs Don't Change (1998)",
+      "url": "https://www.w3.org/Provider/Style/URI",
+      "summary": "",
+      "published_at": "2026-08-09T14:32:53+00:00",
+      "category": "news",
+      "tags": [
+        "hackernews",
+        "hot"
+      ],
+      "score": 72.0,
+      "extra": {
+        "platform": "hackernews",
+        "comments": 11,
+        "by": "Klaster_1"
+      },
+      "raw": {
+        "by": "Klaster_1",
+        "descendants": 11,
+        "id": 49231809,
+        "kids": [
+          49234288,
+          49233757,
+          49233572,
+          49233836,
+          49233506,
+          49231869,
+          49232953,
+          49233503
+        ],
+        "score": 72,
+        "time": 1786285973,
+        "title": "Cool URIs Don't Change (1998)",
+        "type": "story",
+        "url": "https://www.w3.org/Provider/Style/URI"
+      }
+    },
+    {
+      "source": "hackernews",
+      "item_id": "49231397",
+      "title": "John C. Lilly on solid state intelligence and the elimination of man (1978)",
+      "url": "https://kibotronics.net/unlisted/lilly-machines/",
+      "summary": "",
+      "published_at": "2026-08-09T13:47:36+00:00",
+      "category": "news",
+      "tags": [
+        "hackernews",
+        "hot"
+      ],
+      "score": 73.0,
+      "extra": {
+        "platform": "hackernews",
+        "comments": 28,
+        "by": "Kiboneu"
+      },
+      "raw": {
+        "by": "Kiboneu",
+        "descendants": 28,
+        "id": 49231397,
+        "kids": [
+          49232030,
+          49233344,
+          49233011,
+          49232488,
+          49232724,
+          49232305,
+          49232397,
+          49232822,
+          49233127,
+          49232544,
+          49232404
+        ],
+        "score": 73,
+        "time": 1786283256,
+        "title": "John C. Lilly on solid state intelligence and the elimination of man (1978)",
+        "type": "story",
+        "url": "https://kibotronics.net/unlisted/lilly-machines/"
+      }
+    },
+    {
+      "source": "hackernews",
+      "item_id": "49230891",
+      "title": "Show HN: A Project Oberon System version running on RISC-V instead of RISC-5",
+      "url": "https://github.com/rochus-keller/OberonSystem/tree/op2-rv32",
+      "summary": "",
+      "published_at": "2026-08-09T12:43:16+00:00",
+      "category": "news",
+      "tags": [
+        "hackernews",
+        "hot"
+      ],
+      "score": 79.0,
+      "extra": {
+        "platform": "hackernews",
+        "comments": 16,
+        "by": "Rochus"
+      },
+      "raw": {
+        "by": "Rochus",
+        "descendants": 16,
+        "id": 49230891,
+        "kids": [
+          49232157,
+          49232269,
+          49231948,
+          49232757,
+          49231608
+        ],
+        "score": 79,
+        "time": 1786279396,
+        "title": "Show HN: A Project Oberon System version running on RISC-V instead of RISC-5",
+        "type": "story",
+        "url": "https://github.com/rochus-keller/OberonSystem/tree/op2-rv32"
+      }
+    },
+    {
+      "source": "hackernews",
+      "item_id": "49229174",
+      "title": "There Are Magic Hexagons of Every Order",
+      "url": "https://gukov.dev/math/2026/08/02/new-magic-hexagons.html",
+      "summary": "",
+      "published_at": "2026-08-09T07:19:58+00:00",
+      "category": "news",
+      "tags": [
+        "hackernews",
+        "hot"
+      ],
+      "score": 156.0,
+      "extra": {
+        "platform": "hackernews",
+        "comments": 23,
+        "by": "gukoff"
+      },
+      "raw": {
+        "by": "gukoff",
+        "descendants": 23,
+        "id": 49229174,
+        "kids": [
+          49230552,
+          49233977,
+          49231215,
+          49231865,
+          49230769,
+          49230076,
+          49229920,
+          49233535,
+          49230520,
+          49230415
+        ],
+        "score": 156,
+        "time": 1786259998,
+        "title": "There Are Magic Hexagons of Every Order",
+        "type": "story",
+        "url": "https://gukov.dev/math/2026/08/02/new-magic-hexagons.html"
+      }
+    },
+    {
+      "source": "hackernews",
+      "item_id": "49232857",
+      "title": "FCC moves to ban Lidar-equipped foreign drones from US",
+      "url": "https://www.tomshardware.com/tech-industry/drones/fcc-moves-to-ban-lidar-equipped-foreign-drones-from-us-classifies-the-technology-as-military-grade-in-a-proposal-that-could-also-hit-thermal-models-and-the-swarms-used-drone-light-shows",
+      "summary": "",
+      "published_at": "2026-08-09T16:24:59+00:00",
+      "category": "news",
+      "tags": [
+        "hackernews",
+        "hot"
+      ],
+      "score": 51.0,
+      "extra": {
+        "platform": "hackernews",
+        "comments": 28,
+        "by": "f-serif"
+      },
+      "raw": {
+        "by": "f-serif",
+        "descendants": 28,
+        "id": 49232857,
+        "kids": [
+          49233741,
+          49233542,
+          49233311,
+          49233851
+        ],
+        "score": 51,
+        "time": 1786292699,
+        "title": "FCC moves to ban Lidar-equipped foreign drones from US",
+        "type": "story",
+        "url": "https://www.tomshardware.com/tech-industry/drones/fcc-moves-to-ban-lidar-equipped-foreign-drones-from-us-classifies-the-technology-as-military-grade-in-a-proposal-that-could-also-hit-thermal-models-and-the-swarms-used-drone-light-shows"
+      }
+    },
+    {
+      "source": "hackernews",
+      "item_id": "49232110",
+      "title": "Tom Stanton's supersonic trebuchet breaks sound barrier with gravity alone",
+      "url": "https://www.techeblog.com/tom-stanton-supersonic-trebuchet/",
+      "summary": "",
+      "published_at": "2026-08-09T15:08:51+00:00",
+      "category": "news",
+      "tags": [
+        "hackernews",
+        "hot"
+      ],
+      "score": 108.0,
+      "extra": {
+        "platform": "hackernews",
+        "comments": 34,
+        "by": "Thorondor"
+      },
+      "raw": {
+        "by": "Thorondor",
+        "descendants": 34,
+        "id": 49232110,
+        "kids": [
+          49233644,
+          49233391,
+          49232584,
+          49232519,
+          49232632,
+          49232796,
+          49232746,
+          49234164
+        ],
+        "score": 108,
+        "time": 1786288131,
+        "title": "Tom Stanton's supersonic trebuchet breaks sound barrier with gravity alone",
+        "type": "story",
+        "url": "https://www.techeblog.com/tom-stanton-supersonic-trebuchet/"
+      }
+    },
+    {
+      "source": "hackernews",
+      "item_id": "49228663",
+      "title": "Microsoft Word for Windows 1.1a, Native X64 Port",
+      "url": "https://github.com/jmarshall23/msword",
+      "summary": "",
+      "published_at": "2026-08-09T05:23:41+00:00",
+      "category": "news",
+      "tags": [
+        "hackernews",
+        "hot"
+      ],
+      "score": 142.0,
+      "extra": {
+        "platform": "hackernews",
+        "comments": 60,
+        "by": "BruceEel"
+      },
+      "raw": {
+        "by": "BruceEel",
+        "descendants": 60,
+        "id": 49228663,
+        "kids": [
+          49230627,
+          49229365,
+          49228957,
+          49233030,
+          49230044,
+          49229468,
+          49229089,
+          49231140,
+          49229163,
+          49229135
+        ],
+        "score": 142,
+        "time": 1786253021,
+        "title": "Microsoft Word for Windows 1.1a, Native X64 Port",
+        "type": "story",
+        "url": "https://github.com/jmarshall23/msword"
+      }
+    },
+    {
+      "source": "hackernews",
+      "item_id": "49230022",
+      "title": "The Alpha 21264 CPU: NT's Greatest RISC (1998)",
+      "url": "https://halfhill.com/byte/1998-12_alpha.html",
+      "summary": "",
+      "published_at": "2026-08-09T10:06:37+00:00",
+      "category": "news",
+      "tags": [
+        "hackernews",
+        "hot"
+      ],
+      "score": 62.0,
+      "extra": {
+        "platform": "hackernews",
+        "comments": 42,
+        "by": "Lammy"
+      },
+      "raw": {
+        "by": "Lammy",
+        "descendants": 42,
+        "id": 49230022,
+        "kids": [
+          49232919,
+          49231915,
+          49231087,
+          49230589,
+          49231767,
+          49230236,
+          49231502,
+          49231714,
+          49230481,
+          49230273,
+          49233158,
+          49232735,
+          49230916,
+          49231943,
+          49230632
+        ],
+        "score": 62,
+        "time": 1786269997,
+        "title": "The Alpha 21264 CPU: NT's Greatest RISC (1998)",
+        "type": "story",
+        "url": "https://halfhill.com/byte/1998-12_alpha.html"
+      }
+    }
+  ]
+}

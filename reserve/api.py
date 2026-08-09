@@ -203,6 +203,31 @@ class ReserveAPI(BaseHTTPRequestHandler):
             from reserve.dashboard import needs_view
             return self._send(200, _json_clean(needs_view(store=self.store)))
 
+        # ---------- v4: 多源数据管理器 (ISSUE #5) ----------
+        if path == "/api/v1/sources":
+            from reserve.sources import list_sources
+            return self._send(200, _json_clean(list_sources()))
+        if path == "/api/v1/sources/adapters":
+            from pipeline.adapters import registry
+            return self._send(200, {"items": registry.list_adapters()})
+        if path == "/api/v1/digest":
+            from reserve.sources import digest
+            refresh = qs.get("refresh", "").lower() in ("1", "true", "yes")
+            only = qs.get("only", "") or None
+            only_list = [x for x in only.split(",") if x] if only else None
+            return self._send(200, _json_clean(digest(refresh=refresh, only=only_list)))
+        if path.startswith("/api/v1/sources/") and path.endswith("/items"):
+            from reserve.sources import CACHE_DIR
+            source = path.rsplit("/", 2)[-2]
+            cache = CACHE_DIR / f"{source}.json"
+            if not cache.exists():
+                return self._send(404, {"error": f"source {source} 无缓存, 先拉取"})
+            try:
+                payload = json.loads(cache.read_text(encoding="utf-8"))
+            except Exception as e:
+                return self._send(500, {"error": str(e)})
+            return self._send(200, payload)
+
         # ---------- v3: Web 静态页面 ----------
         if path == "/" or path == "/index.html":
             return self._serve_static("index.html")
@@ -299,6 +324,41 @@ class ReserveAPI(BaseHTTPRequestHandler):
                 return self._send(400, {"error": "repos required"})
             review_action_candidates(repos, fetch_readme=bool(data.get("fetch_readme", True)))
             return self._send(200, {"queued": len([r for r in repos if r.get("review_status")])})
+        if path == "/api/v1/sources/fetch":
+            """拉取全部/指定数据源。body: {only: ["cnb", ...]} 可选。"""
+            data = self._read_json()
+            only = data.get("only") or data.get("sources") or None
+            from pipeline.adapters import fetch_all
+            results = fetch_all(only=only, write_cache=True)
+            ok = sum(1 for r in results if r.get("ok"))
+            return self._send(200, {"ok": ok, "total": len(results), "results": results})
+        if path == "/api/v1/sources/enable":
+            """启停数据源。body: {source, enabled}。"""
+            data = self._read_json()
+            source = data.get("source") or data.get("id")
+            enabled = bool(data.get("enabled", True))
+            if not source:
+                return self._send(400, {"error": "source required"})
+            from reserve.sources import set_enabled
+            return self._send(200, set_enabled(source, enabled))
+        if path == "/api/v1/sources/config":
+            """更新某数据源配置。body: {source, config: {...}}。"""
+            data = self._read_json()
+            source = data.get("source") or data.get("id")
+            patch = data.get("config") or data.get("patch") or {}
+            if not source:
+                return self._send(400, {"error": "source required"})
+            from reserve.sources import set_config
+            return self._send(200, set_config(source, patch))
+        if path == "/api/v1/sources/feeds":
+            """新增 RSS 订阅源。body: {name, url, category}。"""
+            data = self._read_json()
+            name = data.get("name")
+            url = data.get("url")
+            if not name or not url:
+                return self._send(400, {"error": "name and url required"})
+            from reserve.sources import add_feed
+            return self._send(200, add_feed(name, url, data.get("category", "tech")))
         return self._send(404, {"error": f"no route: {path}"})
 
     def do_DELETE(self):
