@@ -20,6 +20,8 @@ LanceDB 储备库 (repo_reserve 表: 功能索引 + 条件判断 + embedding)
         ├── reserve/quality.py 内容质量评估 (快照/储备库/趋势 + 每日质量报告)
         ├── reserve/self_heal.py 管道自愈合 (健康检查 → 诊断 → 自动修复 → 事件日志)
         ├── reserve/dashboard.py 内容结构化整理视图 (总览/列表/能力簇/质量/快照/需求/审核)
+        ├── reserve/relations  二次整理层 (ISSUE #7): 金融各市场/品种两两关联量化 + 预测对比
+        │     (dims 维度 / frame 矩阵 / engine 评估引擎 / compare 预测验证 / store / demo)
         └── reserve/api.py     REST API (/api/v1/reserve/* + /api/v1/needs + /api/v1/quality + /api/v1/health|heal + /api/v1/dashboard/*) + Web 管理页面 (web/)
 ```
 

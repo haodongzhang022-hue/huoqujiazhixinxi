@@ -654,6 +654,160 @@ async function runHeal(checkOnly) {
   }
 }
 
+/* ---------------- 二次整理层: 关联分析 (ISSUE #7) ---------------- */
+
+function verdictBadge(v) {
+  const map = { strong: "强", good: "良好", weak: "弱", insufficient: "不足" };
+  return `<span class="badge verdict-${esc(v)}">${esc(map[v] || v)}</span>`;
+}
+
+function dimShort(d) {
+  if (!d) return "*";
+  const parts = [];
+  if (d.symbol && d.symbol !== "*") parts.push(d.symbol);
+  if (d.market && d.market !== "*") parts.push(d.market);
+  if (d.country && d.country !== "*") parts.push(d.country);
+  if (d.exchange && d.exchange !== "*") parts.push(d.exchange);
+  if (d.asset && d.asset !== "*") parts.push(d.asset);
+  if (d.timeframe && d.timeframe !== "*") parts.push(d.timeframe);
+  return parts.join(".") || "*";
+}
+
+function edgeRow(e) {
+  const m = e.metrics || {};
+  const verdict = (e.comparison && e.comparison.verdict) || "";
+  const hit = e.comparison && e.comparison.metrics ? e.comparison.metrics.hit_rate : "";
+  const r2 = e.comparison && e.comparison.metrics ? e.comparison.metrics.r2 : "";
+  const bar = `<div class="rel-bar"><div class="rel-bar-fill" style="width:${Math.round((e.strength || 0) * 100)}%"></div></div>`;
+  return `
+    <tr>
+      <td class="rel-edge">${esc(dimShort(e.from))} <span class="arrow">→</span> ${esc(dimShort(e.to))}</td>
+      <td>${bar}<span class="rel-strength">${(e.strength || 0).toFixed(3)}</span></td>
+      <td class="center">${e.sign > 0 ? "<span class='pos'>+</span>" : e.sign < 0 ? "<span class='neg'>−</span>" : "0"}</td>
+      <td class="center">${esc(e.lag)}</td>
+      <td class="center">${(e.stability || 0).toFixed(2)}</td>
+      <td><span class="badge">${esc(e.model)}</span></td>
+      <td class="center">${r2 !== "" ? esc(r2) : "-"}${hit !== "" ? ` <span class="muted">hit ${esc(hit)}</span>` : ""}</td>
+      <td>${verdict ? verdictBadge(verdict) : "-"}</td>
+      <td><a href="#" class="link" data-edge="${esc(e.edge)}" data-dim="${esc(JSON.stringify({from: e.from, to: e.to}))}">对比曲线</a></td>
+    </tr>`;
+}
+
+function drawCurve(canvas, curve, title) {
+  const dates = curve.dates || [];
+  const actual = curve.actual || [];
+  const predicted = curve.predicted || [];
+  if (!dates.length || !canvas) return;
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const pad = { l: 46, r: 12, t: 12, b: 22 };
+  const all = actual.concat(predicted);
+  let min = Math.min(...all), max = Math.max(...all);
+  if (min === max) { min -= 1; max += 1; }
+  const x = i => pad.l + (i / Math.max(1, dates.length - 1)) * (W - pad.l - pad.r);
+  const y = v => pad.t + (1 - (v - min) / (max - min)) * (H - pad.t - pad.b);
+  // grid
+  ctx.strokeStyle = "#2a2f3a"; ctx.lineWidth = 1;
+  for (let g = 0; g <= 4; g++) {
+    const gy = pad.t + (g / 4) * (H - pad.t - pad.b);
+    ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(W - pad.r, gy); ctx.stroke();
+    const val = max - (g / 4) * (max - min);
+    ctx.fillStyle = "#8b93a7"; ctx.font = "10px sans-serif"; ctx.textAlign = "right";
+    ctx.fillText(val.toFixed(3), pad.l - 4, gy + 3);
+  }
+  // actual
+  ctx.strokeStyle = "#4fc3f7"; ctx.lineWidth = 1.6; ctx.beginPath();
+  actual.forEach((v, i) => { const px = x(i), py = y(v); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); });
+  ctx.stroke();
+  // predicted
+  ctx.strokeStyle = "#ffb74d"; ctx.lineWidth = 1.6; ctx.setLineDash([4, 3]); ctx.beginPath();
+  predicted.forEach((v, i) => { const px = x(i), py = y(v); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); });
+  ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = "#8b93a7"; ctx.font = "10px sans-serif";
+  ctx.fillText(title || "", pad.l, H - 2);
+}
+
+async function renderRelations(container) {
+  const [matrix, edgesData] = await Promise.all([
+    getJSON(`${API}/relations/matrix`),
+    getJSON(`${API}/relations/edges?limit=500`),
+  ]);
+  const edges = edgesData.items || [];
+  const dims = (matrix.dimensions || []).map(d => dimShort(d));
+  const counts = { strong: 0, good: 0, weak: 0, insufficient: 0 };
+  edges.forEach(e => { if (e.comparison && counts[e.comparison.verdict] != null) counts[e.comparison.verdict]++; });
+  const totalV = Object.values(counts).reduce((a, b) => a + b, 0);
+
+  let html = `
+  <div class="panel">
+    <h2>🔗 二次整理层 · 金融各市场两两关联</h2>
+    <p class="muted">跨市场 / 跨国家 / 跨品种 / 跨交易类型 / 跨时间级别的<b>两两双向</b>影响评估与量化；每条边 A→B 独立建模、独立验证预测能力。</p>
+    <div class="rel-toolbar">
+      <button class="btn" id="rel-run-demo">▶ 运行演示数据</button>
+      <span class="muted">矩阵 ${esc(dims.length)} 维 · ${esc(edgesData.count)} 条有向边</span>
+    </div>
+    <div class="stat-row">
+      ${Object.entries(counts).map(([k, v]) => `<div class="stat-card"><div class="num">${esc(v)}</div><div class="label">${verdictBadge(k)}</div></div>`).join("")}
+    </div>
+    <div class="rel-dims muted">维度: ${dims.map(esc).join(" &nbsp;·&nbsp; ")}</div>
+  </div>
+  <div class="panel">
+    <h2>📊 两两关联边（按强度排序）</h2>
+    <table class="rel-table">
+      <thead><tr><th>关联 (A → B)</th><th>强度</th><th>方向</th><th>领先</th><th>稳定</th><th>模型</th><th>预测能力</th><th>评价</th><th></th></tr></thead>
+      <tbody>${edges.map(edgeRow).join("") || '<tr><td colspan="9" class="empty">暂无数据, 点击「运行演示数据」或等待数据获取层接入</td></tr>'}</tbody>
+    </table>
+  </div>
+  <div class="panel" id="rel-detail">
+    <h2>📈 预测 vs 实际 曲线对比</h2>
+    <p class="muted" id="rel-detail-tip">点击任意一条关联的「对比曲线」查看模型预测影响曲线 vs 实际影响曲线。</p>
+    <div id="rel-detail-body"></div>
+  </div>`;
+  container.innerHTML = html;
+
+  container.querySelector("#rel-run-demo").addEventListener("click", async () => {
+    try {
+      await fetch(`${API}/relations/run-demo`, { method: "POST" });
+      alert("✅ 演示数据已生成并落盘 (56 条两两双向边), 正在刷新…");
+      renderRelations(container);
+    } catch (e) { alert("运行失败: " + e.message); }
+  });
+
+  container.querySelectorAll("a[data-edge]").forEach(a => {
+    a.addEventListener("click", async ev => {
+      ev.preventDefault();
+      const edge = a.dataset.edge;
+      try {
+        const data = await getJSON(`${API}/relations/edge/${encodeURIComponent(edge)}`);
+        const cmp = data.comparison;
+        const body = document.getElementById("rel-detail-body");
+        const tip = document.getElementById("rel-detail-tip");
+        tip.textContent = `${data.edge} · 模型 ${data.model} · 强度 ${(data.strength || 0).toFixed(3)} · 领先 ${data.lag} 期 · 方向 ${data.sign > 0 ? "+" : data.sign < 0 ? "−" : "0"}`;
+        if (!cmp || !cmp.curve || !cmp.curve.dates.length) {
+          body.innerHTML = '<div class="empty">该边无测试段对比数据 (样本不足)</div>';
+          return;
+        }
+        const m = cmp.metrics || {};
+        body.innerHTML = `
+          <canvas id="rel-canvas" width="900" height="260"></canvas>
+          <div class="rel-metrics">
+            <div class="stat-card"><div class="num">${esc(m.r2 ?? "-")}</div><div class="label">测试段 R²</div></div>
+            <div class="stat-card"><div class="num">${esc(m.hit_rate ?? "-")}</div><div class="label">方向命中率</div></div>
+            <div class="stat-card"><div class="num">${esc(m.rmse ?? "-")}</div><div class="label">RMSE</div></div>
+            <div class="stat-card"><div class="num">${esc(m.mae ?? "-")}</div><div class="label">MAE</div></div>
+            <div class="stat-card"><div class="num">${verdictBadge(cmp.verdict)}</div><div class="label">预测能力</div></div>
+          </div>
+          <div class="rel-iter">${(cmp.iterations || []).map(i => `<div>💡 ${esc(i)}</div>`).join("")}</div>`;
+        drawCurve(document.getElementById("rel-canvas"), cmp.curve,
+          `蓝=实际影响曲线  橙(虚线)=模型预测影响曲线 (${dimShort(data.from)} → ${dimShort(data.to)})`);
+      } catch (e) {
+        document.getElementById("rel-detail-body").innerHTML = `<div class="empty">加载失败: ${esc(e.message)}</div>`;
+      }
+    });
+  });
+}
+
 /* ---------------- 视图切换 ---------------- */
 const VIEWS = {
   overview: renderOverview,
@@ -666,6 +820,7 @@ const VIEWS = {
   needs: renderNeeds,
   review: renderReview,
   sources: renderSources,
+  relations: renderRelations,
   heal: renderHeal,
 };
 

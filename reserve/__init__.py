@@ -15,6 +15,9 @@
   schemas      统一信息条目/数据源/信息流 数据契约 (Pydantic)
   feed         人类优先 / AI 优先 信息流 (对外公开, 一次获取多人共享)
   fastapi_app  FastAPI 聚合管理页面 + 对外信息流 API + 兼容既有 REST
+  relations    二次整理层 (ISSUE #7): 金融各市场/品种间两两关联量化 + 预测 vs 实际对比
+                (dims 维度 / frame 矩阵 / engine 评估引擎 / compare 预测验证 /
+                 store 持久化 / schemas 契约 / demo 演示)
   ingest       fetch -> classify -> embed -> 入库 端到端管道
   search       全文/向量/混合检索
   trigger      条件触发引擎 (AUTO/SUGGEST/LOG + needs 双向生长回路)

@@ -27,5 +27,8 @@ config/review_queue.json
 # 质量报告 (运行时生成)
 data/reports/*.json
 
+# 二次整理层关联矩阵 (运行时生成, 不入库)
+relation_store/
+
 # 自愈事件日志 (运行时生成)
 data/heal_log.json

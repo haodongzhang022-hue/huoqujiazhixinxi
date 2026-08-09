@@ -311,3 +311,39 @@ tr:hover td { background: rgba(56, 189, 248, 0.05); }
   .item-grid { grid-template-columns: 1fr; }
   .toolbar { flex-direction: column; align-items: stretch; }
 }
+
+/* ============ 二次整理层 · 关联分析 (ISSUE #7) ============ */
+.rel-toolbar { display: flex; align-items: center; gap: 16px; margin: 12px 0; flex-wrap: wrap; }
+.rel-toolbar .btn {
+  padding: 8px 18px; cursor: pointer;
+  background: var(--accent); color: #0b1220;
+  border: none; border-radius: 6px; font-weight: 700; font-size: 13px;
+}
+.rel-toolbar .btn:hover { opacity: 0.88; }
+.stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin: 14px 0; }
+.rel-dims { font-size: 12px; line-height: 1.8; margin-top: 6px; }
+
+.rel-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+.rel-table th, .rel-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+.rel-table th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+.rel-table td.center { text-align: center; }
+.rel-table tr:hover td { background: rgba(56, 189, 248, 0.04); }
+.rel-edge { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--accent); }
+.rel-edge .arrow { color: var(--yellow); }
+.rel-strength { font-weight: 700; color: var(--green); margin-left: 6px; }
+.pos { color: var(--green); font-weight: 700; }
+.neg { color: var(--red); font-weight: 700; }
+.link { color: var(--accent); text-decoration: underline; cursor: pointer; }
+
+.rel-bar { display: inline-block; width: 90px; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; vertical-align: middle; }
+.rel-bar-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--yellow)); border-radius: 4px; }
+
+.badge.verdict-strong { background: rgba(52, 211, 153, 0.18); color: var(--green); }
+.badge.verdict-good { background: rgba(56, 189, 248, 0.18); color: var(--accent); }
+.badge.verdict-weak { background: rgba(251, 191, 36, 0.18); color: var(--yellow); }
+.badge.verdict-insufficient { background: rgba(148, 163, 184, 0.18); color: var(--muted); }
+
+#rel-canvas { width: 100%; max-width: 920px; height: auto; background: #0b1220; border: 1px solid var(--border); border-radius: 8px; margin: 10px 0; }
+.rel-metrics { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0; }
+.rel-metrics .stat-card { min-width: 110px; }
+.rel-iter { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--yellow); margin-top: 8px; }

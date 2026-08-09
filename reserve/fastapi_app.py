@@ -39,6 +39,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from reserve.schemas import AiFeed, DailyDigest, HumanFeed, PublicHealth, SourceSyncResult
+from reserve.relations.schemas import RelationComparison, RelationEdge, RelationMatrix
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB_DIR = ROOT / "web"
@@ -49,6 +50,7 @@ app = FastAPI(
         "每天自动获取开源项目信息，一次获取、多人共享；"
         "提供 人类优先(human) / AI 优先(ai) 双信息流，AI 可直接消费搭建自动化流程。"
         "预留 CNB 新项目 / 论文 / 热点 / 科技新闻 数据源扩展位。"
+        "二次整理层: 金融各市场/品种间两两关联量化 + 预测 vs 实际对比 (ISSUE #7)。"
     ),
     version="1.0.0",
 )
@@ -237,6 +239,151 @@ def api_sync_source(source: str, body: SyncBody | None = None):
         source=source, status="reserved", items=0,
         message=f"数据源 {source} 为预留扩展位, 将在后续 ISSUE 中接入",
     )
+
+
+# ---------------- 二次整理层: 金融各市场两两关联 (ISSUE #7) ----------------
+
+
+def _relation_store():
+    from reserve.relations.store import RelationStore
+    return RelationStore()
+
+
+def _dim_key_of(d: dict) -> str:
+    return ".".join([str(d.get(k, "*")) for k in ("market", "country", "exchange", "symbol", "asset", "timeframe")])
+
+
+@app.get("/api/v1/relations/matrix", response_model=None, tags=["二次整理层"])
+def api_relations_matrix():
+    """关联矩阵骨架: 目标集 -> 全两两有序边 (排除自环, 方向敏感)。"""
+    store = _relation_store()
+    matrix = store.load_matrix()
+    if matrix is None:
+        return {"schema_version": "1.0", "dimensions": [], "dimension_keys": [],
+                "pair_count": 0, "pairs": [], "note": "尚未构建矩阵, 先运行 python -m reserve.relations.demo"}
+    return _clean(matrix)
+
+
+@app.get("/api/v1/relations/edges", response_model=None, tags=["二次整理层"])
+def api_relations_edges(
+    min_strength: float = Query(0.0, ge=0.0, le=1.0),
+    model: Optional[str] = Query(None, description="模型类型过滤"),
+    verdict: Optional[str] = Query(None, description="预测能力评价过滤: strong/good/weak/insufficient"),
+    limit: int = Query(200, ge=1, le=2000),
+    offset: int = Query(0, ge=0),
+    sort: str = Query("strength", description="strength|stability|lag|sample_size"),
+):
+    """两两关联边列表 (A→B, 每条独立)。"""
+    store = _relation_store()
+    edges = store.list_edges()
+    # 附带预测对比摘要 (verdict / 测试段指标), 便于表格直接展示预测能力
+    comps = {c.get("edge"): c for c in store.list_comparisons()}
+    for e in edges:
+        c = comps.get(e.get("edge"))
+        if c:
+            e["comparison"] = {"verdict": c.get("verdict"),
+                               "metrics": c.get("metrics"),
+                               "iterations": c.get("iterations")}
+    if model:
+        edges = [e for e in edges if e.get("model") == model]
+    if verdict:
+        comps = {c.get("edge"): c.get("verdict") for c in store.list_comparisons()}
+        edges = [e for e in edges if comps.get(e.get("edge")) == verdict]
+    edges = [e for e in edges if (e.get("strength") or 0.0) >= min_strength]
+    rev = sort == "strength" or sort == "stability" or sort == "sample_size"
+    key_fn = {"strength": lambda e: e.get("strength") or 0.0,
+              "stability": lambda e: e.get("stability") or 0.0,
+              "lag": lambda e: e.get("lag") or 0,
+              "sample_size": lambda e: e.get("sample_size") or 0}.get(sort, lambda e: e.get("strength") or 0.0)
+    edges.sort(key=key_fn, reverse=rev)
+    total = len(edges)
+    page = edges[offset:offset + limit]
+    return _clean({"count": total, "limit": limit, "offset": offset, "items": page})
+
+
+@app.get("/api/v1/relations/edge/{edge:path}", response_model=None, tags=["二次整理层"])
+def api_relations_edge(edge: str):
+    """单条边详情 (含关联评估 + 预测 vs 实际对比)。"""
+    store = _relation_store()
+    from urllib.parse import unquote
+    edge = unquote(edge)
+    result = store.load_edge(edge)
+    if result is None:
+        raise HTTPException(status_code=404, detail=f"edge not found: {edge}")
+    comparison = store.load_comparison(edge)
+    if comparison is not None:
+        result["comparison"] = comparison
+    return _clean(result)
+
+
+@app.get("/api/v1/relations/comparisons", response_model=None, tags=["二次整理层"])
+def api_relations_comparisons(
+    verdict: Optional[str] = Query(None, description="预测能力评价过滤"),
+    limit: int = Query(200, ge=1, le=2000),
+):
+    """预测 vs 实际 对比列表 (验证预测能力到底够不够)。"""
+    store = _relation_store()
+    comps = store.list_comparisons()
+    if verdict:
+        comps = [c for c in comps if c.get("verdict") == verdict]
+    comps.sort(key=lambda c: -(c.get("metrics") or {}).get("r2") or 0.0)
+    return _clean({"count": len(comps), "items": comps[:limit]})
+
+
+@app.post("/api/v1/relations/evaluate", response_model=None, tags=["二次整理层"])
+def api_relations_evaluate(body: dict):
+    """实时评估两条序列的关联 (A→B)。
+
+    body: {"series_a": {日期: 值}, "series_b": {日期: 值},
+           "model": "linear", "max_lag": 10, "lag": null,
+           "label_a": "...", "label_b": "..."}   # label 可选, 用于展示
+    """
+    from reserve.relations.engine import evaluate_pair
+    series_a = body.get("series_a") or {}
+    series_b = body.get("series_b") or {}
+    if not series_a or not series_b:
+        raise HTTPException(status_code=400, detail="series_a / series_b 必填")
+    model = body.get("model", "linear")
+    max_lag = int(body.get("max_lag", 10))
+    lag = body.get("lag")
+    result = evaluate_pair(series_a, series_b, model=model, max_lag=max_lag, lag=lag)
+    result["edge"] = f"{body.get('label_a', 'A')} -> {body.get('label_b', 'B')}"
+    result["direction"] = result["edge"]
+    return _clean(result)
+
+
+@app.post("/api/v1/relations/compare", response_model=None, tags=["二次整理层"])
+def api_relations_compare(body: dict):
+    """实时滚动回测: 预测 vs 实际 曲线对比。
+
+    body: {"series_a": {...}, "series_b": {...}, "model": "linear",
+           "lag": null, "train_ratio": 0.7, "max_lag": 10,
+           "label_a": "...", "label_b": "..."}
+    """
+    from reserve.relations.compare import compare
+    series_a = body.get("series_a") or {}
+    series_b = body.get("series_b") or {}
+    if not series_a or not series_b:
+        raise HTTPException(status_code=400, detail="series_a / series_b 必填")
+    result = compare(series_a, series_b, model=body.get("model", "linear"),
+                     lag=body.get("lag"), train_ratio=float(body.get("train_ratio", 0.7)),
+                     max_lag=int(body.get("max_lag", 10)))
+    result["edge"] = f"{body.get('label_a', 'A')} -> {body.get('label_b', 'B')}"
+    return _clean(result)
+
+
+@app.post("/api/v1/relations/run-demo", response_model=None, tags=["二次整理层"])
+def api_relations_run_demo(days: int = Query(200, ge=30, le=2000),
+                           model: str = Query("linear", description="评估模型"),
+                           max_lag: int = Query(10, ge=1, le=30)):
+    """运行内置演示: 建矩阵 + 全两两评估 + 预测对比 + 落盘。
+
+    返回汇总 (含 Top 关联边 / 预测能力分布)。
+    """
+    from reserve.relations.demo import build_panel, demo_summary
+    panel = build_panel(days)
+    summary = demo_summary(panel, model=model, max_lag=max_lag, top=10)
+    return _clean(summary)
 
 
 # ---------------- 兼容既有 REST API ----------------
