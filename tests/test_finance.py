@@ -119,7 +119,9 @@ def test_disclosure():
     # full 级 (demo 降级; 若已有缓存则直接命中缓存返回 data)
     full = full_level("CN.RB", source="akshare", time_level="1d")
     assert full["level"] == "full"
-    payload = full.get("result") or full  # 缓存命中时字段是 data, 新获取时字段是 result
+    # 兼容两种返回形态: 新获取时为 result, 命中缓存时为 data (顶层 ok/demo 一致)
+    payload = full.get("result") or full.get("data")
+    assert payload is not None
     assert payload.get("ok") is True
     assert payload.get("demo") is True
 
