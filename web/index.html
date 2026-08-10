@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>科技每日信息聚合 · 人类/AI 双信息流</title>
+<title>科技每日信息聚合 · 人类/AI 双信息流 · 多源</title>
 <link rel="stylesheet" href="/web/style.css">
 </head>
 <body>
@@ -12,6 +12,7 @@
   <nav class="tabs">
     <button class="tab active" data-view="overview">总览</button>
     <button class="tab" data-view="digest">今日汇总</button>
+    <button class="tab" data-view="timeline">时间线</button>
     <button class="tab" data-view="feed">信息流</button>
     <button class="tab" data-view="repos">仓库列表</button>
     <button class="tab" data-view="clusters">能力簇</button>
@@ -19,7 +20,7 @@
     <button class="tab" data-view="snapshots">每日快照</button>
     <button class="tab" data-view="needs">需求</button>
     <button class="tab" data-view="review">审核队列</button>
-    <button class="tab" data-view="sources">数据源</button>
+    <button class="tab" data-view="sources">数据源管理</button>
     <button class="tab" data-view="heal">自愈中心</button>
   </nav>
 </header>
@@ -27,6 +28,7 @@
 <main id="app">
   <section id="view-overview" class="view active"><div class="loading">加载中...</div></section>
   <section id="view-digest" class="view"><div class="loading">加载中...</div></section>
+  <section id="view-timeline" class="view"><div class="loading">加载中...</div></section>
   <section id="view-feed" class="view"><div class="loading">加载中...</div></section>
   <section id="view-repos" class="view"><div class="loading">加载中...</div></section>
   <section id="view-clusters" class="view"><div class="loading">加载中...</div></section>

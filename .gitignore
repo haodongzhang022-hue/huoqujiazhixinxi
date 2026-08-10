@@ -11,6 +11,9 @@ reserve_data/
 pipeline/data/snapshots/*
 !pipeline/data/snapshots/demo-*.json
 
+# 多源聚合缓存 (小, 提交便于页面首次渲染与离线演示; 每日 CI 刷新)
+# pipeline/data/sources/*.json 保留入库
+
 # needs 运行时数据
 pipeline/data/needs/*.json
 !pipeline/data/needs/.gitkeep

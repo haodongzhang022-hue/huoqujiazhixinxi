@@ -14,7 +14,7 @@ from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
-ItemType = Literal["repo", "paper", "trend", "news", "cnb-project"]
+ItemType = Literal["repo", "paper", "trend", "news", "cnb-project", "prediction"]
 SourceStatus = Literal["active", "reserved", "error", "not_configured"]
 
 

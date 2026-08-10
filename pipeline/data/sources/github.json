@@ -1,0 +1,251 @@
+{
+  "source": "github",
+  "fetched_at": "2026-08-09T20:45:41.170184+00:00",
+  "count": 5,
+  "items": [
+    {
+      "source": "github",
+      "item_id": "awesome-org/agent-orchestrator",
+      "title": "awesome-org/agent-orchestrator",
+      "url": "https://github.com/awesome-org/agent-orchestrator",
+      "summary": "Multi-agent orchestration framework with handoff patterns and routing",
+      "published_at": "2026-01-20T14:38:15.909167+00:00",
+      "category": "repos",
+      "tags": [
+        "multi-agent",
+        "orchestration",
+        "workflow"
+      ],
+      "score": 5200.0,
+      "extra": {
+        "platform": "github",
+        "stars": 5200,
+        "stars_delta_24h": 180,
+        "stars_delta_7d": 1250,
+        "language": "Python",
+        "is_new_this_week": false,
+        "category_decision": "",
+        "category": "agent-orchestration"
+      },
+      "raw": {
+        "full_name": "awesome-org/agent-orchestrator",
+        "name": "agent-orchestrator",
+        "owner": "awesome-org",
+        "description": "Multi-agent orchestration framework with handoff patterns and routing",
+        "language": "Python",
+        "topics": [
+          "multi-agent",
+          "orchestration",
+          "workflow"
+        ],
+        "stargazers_count": 5200,
+        "forks_count": 310,
+        "stars_delta_24h": 180,
+        "stars_delta_7d": 1250,
+        "is_new_this_week": false,
+        "created_at": "2026-01-20T14:38:15.909167+00:00",
+        "pushed_at": "2026-08-06T14:38:15.909167+00:00",
+        "license": {
+          "spdx_id": "MIT"
+        },
+        "archived": false,
+        "html_url": "https://github.com/awesome-org/agent-orchestrator",
+        "category": "agent-orchestration"
+      }
+    },
+    {
+      "source": "github",
+      "item_id": "kb-labs/rag-knowledge-engine",
+      "title": "kb-labs/rag-knowledge-engine",
+      "url": "https://github.com/kb-labs/rag-knowledge-engine",
+      "summary": "RAG knowledge base engine with hybrid vector + keyword retrieval",
+      "published_at": "2026-04-10T14:38:15.909167+00:00",
+      "category": "repos",
+      "tags": [
+        "rag",
+        "vector-db",
+        "knowledge-base",
+        "embedding"
+      ],
+      "score": 8900.0,
+      "extra": {
+        "platform": "github",
+        "stars": 8900,
+        "stars_delta_24h": 320,
+        "stars_delta_7d": 2100,
+        "language": "Go",
+        "is_new_this_week": false,
+        "category_decision": "",
+        "category": "rag-kb"
+      },
+      "raw": {
+        "full_name": "kb-labs/rag-knowledge-engine",
+        "name": "rag-knowledge-engine",
+        "owner": "kb-labs",
+        "description": "RAG knowledge base engine with hybrid vector + keyword retrieval",
+        "language": "Go",
+        "topics": [
+          "rag",
+          "vector-db",
+          "knowledge-base",
+          "embedding"
+        ],
+        "stargazers_count": 8900,
+        "forks_count": 540,
+        "stars_delta_24h": 320,
+        "stars_delta_7d": 2100,
+        "is_new_this_week": false,
+        "created_at": "2026-04-10T14:38:15.909167+00:00",
+        "pushed_at": "2026-08-07T14:38:15.909167+00:00",
+        "license": {
+          "spdx_id": "Apache-2.0"
+        },
+        "archived": false,
+        "html_url": "https://github.com/kb-labs/rag-knowledge-engine",
+        "category": "rag-kb"
+      }
+    },
+    {
+      "source": "github",
+      "item_id": "mcpworld/fast-mcp-sdk",
+      "title": "mcpworld/fast-mcp-sdk",
+      "url": "https://github.com/mcpworld/fast-mcp-sdk",
+      "summary": "MCP server SDK with streaming, auth and tool registry",
+      "published_at": "2026-06-09T14:38:15.909167+00:00",
+      "category": "repos",
+      "tags": [
+        "mcp",
+        "model-context-protocol",
+        "sdk"
+      ],
+      "score": 3400.0,
+      "extra": {
+        "platform": "github",
+        "stars": 3400,
+        "stars_delta_24h": 95,
+        "stars_delta_7d": 780,
+        "language": "TypeScript",
+        "is_new_this_week": false,
+        "category_decision": "",
+        "category": "mcp-servers"
+      },
+      "raw": {
+        "full_name": "mcpworld/fast-mcp-sdk",
+        "name": "fast-mcp-sdk",
+        "owner": "mcpworld",
+        "description": "MCP server SDK with streaming, auth and tool registry",
+        "language": "TypeScript",
+        "topics": [
+          "mcp",
+          "model-context-protocol",
+          "sdk"
+        ],
+        "stargazers_count": 3400,
+        "forks_count": 190,
+        "stars_delta_24h": 95,
+        "stars_delta_7d": 780,
+        "is_new_this_week": false,
+        "created_at": "2026-06-09T14:38:15.909167+00:00",
+        "pushed_at": "2026-08-05T14:38:15.909167+00:00",
+        "license": {
+          "spdx_id": "MIT"
+        },
+        "archived": false,
+        "html_url": "https://github.com/mcpworld/fast-mcp-sdk",
+        "category": "mcp-servers"
+      }
+    },
+    {
+      "source": "github",
+      "item_id": "newbiz/quantum-sim-js",
+      "title": "newbiz/quantum-sim-js",
+      "url": "https://github.com/newbiz/quantum-sim-js",
+      "summary": "Quantum computing simulator in JavaScript with web playground",
+      "published_at": "2026-08-05T14:38:15.909167+00:00",
+      "category": "repos",
+      "tags": [
+        "quantum",
+        "simulator"
+      ],
+      "score": 480.0,
+      "extra": {
+        "platform": "github",
+        "stars": 480,
+        "stars_delta_24h": 12,
+        "stars_delta_7d": 160,
+        "language": "JavaScript",
+        "is_new_this_week": true,
+        "category_decision": "",
+        "category": "ai-applications"
+      },
+      "raw": {
+        "full_name": "newbiz/quantum-sim-js",
+        "name": "quantum-sim-js",
+        "owner": "newbiz",
+        "description": "Quantum computing simulator in JavaScript with web playground",
+        "language": "JavaScript",
+        "topics": [
+          "quantum",
+          "simulator"
+        ],
+        "stargazers_count": 480,
+        "forks_count": 35,
+        "stars_delta_24h": 12,
+        "stars_delta_7d": 160,
+        "is_new_this_week": true,
+        "created_at": "2026-08-05T14:38:15.909167+00:00",
+        "pushed_at": "2026-08-07T14:38:15.909167+00:00",
+        "license": {
+          "spdx_id": "MIT"
+        },
+        "archived": false,
+        "html_url": "https://github.com/newbiz/quantum-sim-js",
+        "category": "ai-applications"
+      }
+    },
+    {
+      "source": "github",
+      "item_id": "toy/old-game",
+      "title": "toy/old-game",
+      "url": "https://github.com/toy/old-game",
+      "summary": "A retro game engine for fun",
+      "published_at": "2024-02-20T14:38:15.909167+00:00",
+      "category": "repos",
+      "tags": [
+        "game"
+      ],
+      "score": 8.0,
+      "extra": {
+        "platform": "github",
+        "stars": 8,
+        "stars_delta_24h": 0,
+        "stars_delta_7d": 0,
+        "language": "C++",
+        "is_new_this_week": false,
+        "category_decision": "",
+        "category": "developer-tools"
+      },
+      "raw": {
+        "full_name": "toy/old-game",
+        "name": "old-game",
+        "owner": "toy",
+        "description": "A retro game engine for fun",
+        "language": "C++",
+        "topics": [
+          "game"
+        ],
+        "stargazers_count": 8,
+        "forks_count": 1,
+        "stars_delta_24h": 0,
+        "stars_delta_7d": 0,
+        "is_new_this_week": false,
+        "created_at": "2024-02-20T14:38:15.909167+00:00",
+        "pushed_at": "2025-07-04T14:38:15.909167+00:00",
+        "license": null,
+        "archived": true,
+        "html_url": "https://github.com/toy/old-game",
+        "category": "developer-tools"
+      }
+    }
+  ]
+}

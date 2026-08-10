@@ -406,12 +406,6 @@ def main():
     return 0
 
 
-if __name__ == "__main__":
-    sys.exit(main())
-
-
-# ---------- quality (质量评估) ----------
-
 def test_quality_assess_snapshot():
     """快照质量评估: demo 快照可评估, 有 score/grade/issues。"""
     from reserve.quality import assess_snapshot
@@ -588,15 +582,15 @@ def test_fastapi_app_routes():
 
 
 def test_feed_sources():
-    """数据源注册表: 已接入 github-repos + 预留 CNB/论文/热点/新闻 扩展位。"""
+    """数据源注册表: 已接入 github-repos + ISSUE #5 多源适配器 (CNB/论文/热点/新闻)。"""
     from reserve.feed import list_sources
     srcs = {s["id"]: s for s in list_sources()}
     assert srcs["github-repos"]["enabled"] is True
     assert srcs["github-repos"]["status"] == "active"
     for sid in ("cnb-projects", "papers", "tech-trends", "news"):
-        assert sid in srcs, f"missing reserved source: {sid}"
-        assert srcs[sid]["enabled"] is False, f"{sid} should be reserved"
-        assert srcs[sid]["planned"] is True
+        assert sid in srcs, f"missing source: {sid}"
+        assert srcs[sid]["enabled"] is True, f"{sid} should be active (ISSUE #5)"
+        assert srcs[sid]["status"] == "active", f"{sid} should be active"
 
 
 def test_feed_build_human():
@@ -659,3 +653,311 @@ def test_schemas_item():
     it2 = Item(id="cnb-projects:owner/repo", type="cnb-project", source="cnb-projects",
                title="cnb 新项目", summary_zh="CNB 平台新项目")
     assert it2.type == "cnb-project"
+
+
+# ============================================================
+# v4: 多源数据管理器 (ISSUE #5)
+# ============================================================
+
+def test_adapters_registry():
+    """适配器注册表: 内置 6 个数据源。"""
+    from pipeline.adapters import registry
+    ids = registry.list_ids()
+    for expect in ("cnb", "github", "arxiv", "hackernews", "polymarket", "rss"):
+        assert expect in ids, f"missing adapter: {expect}"
+    meta = {a["id"]: a for a in registry.list_adapters()}
+    assert meta["arxiv"]["category"] == "papers"
+    assert meta["polymarket"]["category"] == "prediction"
+    assert meta["cnb"]["category"] == "repos"
+
+
+def test_adapter_normalize_item():
+    """统一 item 归一化。"""
+    from pipeline.adapters.base import normalize_item
+    it = normalize_item({
+        "title": "T", "url": "https://x", "description": "d",
+        "stars": 42, "tags": ["a", "b"],
+    }, source="cnb", fallback_id="f1")
+    assert it["source"] == "cnb"
+    assert it["item_id"] == "f1"
+    assert it["category"] == "repos"
+    assert it["score"] == 42.0
+    assert it["tags"] == ["a", "b"]
+
+
+def test_rss_adapter_parse():
+    """RSS 适配器: Atom + RSS2.0 解析。"""
+    from pipeline.adapters.rss import RSSAdapter
+    atom = b'''<?xml version="1.0"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry><title>Atom Title</title><link href="https://a.com/1"/>
+  <published>2026-08-09T00:00:00Z</published><summary>sum</summary></entry>
+</feed>'''
+    items = RSSAdapter._parse(atom, "atom-feed", "tech")
+    assert len(items) == 1
+    assert items[0]["title"] == "Atom Title"
+    assert items[0]["url"] == "https://a.com/1"
+    assert items[0]["category"] == "tech"
+
+    rss = b'''<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <item><title>RSS Title</title><link>https://r.com/1</link>
+  <pubDate>Mon, 09 Aug 2026 00:00:00 GMT</pubDate><description>d</description></item>
+</channel></rss>'''
+    items = RSSAdapter._parse(rss, "rss-feed", "news")
+    assert len(items) == 1
+    assert items[0]["title"] == "RSS Title"
+    assert items[0]["category"] == "news"
+
+
+def test_cnb_adapter_demo_and_to_item():
+    """CNB 适配器: 归一化字段 (CLI 不可用时降级 demo)。"""
+    from pipeline.adapters.cnb import _to_item
+    it = _to_item({
+        "path": "o/r", "name": "r", "description": "desc",
+        "web_url": "https://cnb.cool/o/r", "star_count": 9,
+        "fork_count": 1, "topics": "mcp,ai", "created_at": "2026-08-09T00:00:00Z",
+        "languages": {"language": "Python"},
+    })
+    assert it["title"] == "o/r"
+    assert it["score"] == 9
+    assert it["tags"] == ["mcp", "ai"]
+    assert it["extra"]["platform"] == "cnb"
+
+
+def test_github_adapter_from_snapshot():
+    """GitHub 适配器: 从 demo 快照读取。"""
+    from pipeline.adapters.github import GitHubAdapter
+    from pipeline.adapters.base import normalize_item
+    a = GitHubAdapter({})
+    items = a.fetch()
+    assert isinstance(items, list)
+    if items:
+        it = normalize_item(items[0], source="github", fallback_id="gh-test")
+        assert it["source"] == "github"
+        assert it["category"] == "repos"
+        assert it["extra"]["platform"] == "github"
+
+
+def test_arxiv_adapter_parse():
+    """arXiv 适配器: Atom XML 解析。"""
+    from pipeline.adapters.arxiv import ArxivAdapter
+    xml = b'''<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry>
+    <id>http://arxiv.org/abs/2608.00001v1</id>
+    <title>Test Paper Title</title>
+    <summary>Abstract text here.</summary>
+    <published>2026-08-09T00:00:00Z</published>
+    <author><name>Alice Smith</name></author>
+    <link href="http://arxiv.org/abs/2608.00001v1" rel="alternate"/>
+  </entry>
+</feed>'''
+    items = ArxivAdapter._parse(xml)
+    assert len(items) == 1
+    assert items[0]["title"] == "Test Paper Title"
+    assert items[0]["item_id"] == "2608.00001v1"
+    assert items[0]["category"] == "papers"
+    assert items[0]["extra"]["authors"] == ["Alice Smith"]
+
+
+def test_sources_manager_list_and_digest():
+    """数据源管理器: 列表 + 聚合摘要 (离线缓存优先)。"""
+    from reserve import sources
+    src = sources.list_sources()
+    assert src["mode"] == "sources"
+    assert src["total"] >= 6
+
+    d = sources.digest(refresh=False)
+    assert d["mode"] == "digest"
+    assert "categories" in d
+    cats = {c["key"] for c in d["categories"]}
+    assert "repos" in cats and "papers" in cats
+
+
+def test_sources_set_enabled_and_feed():
+    """数据源管理器: 启停 + 新增订阅源 (写配置, 恢复现场)。"""
+    from reserve import sources
+    import json
+    backup = open(sources.CONFIG_PATH, encoding="utf-8").read()
+    try:
+        r = sources.set_enabled("rss", False)
+        assert r["ok"] and r["enabled"] is False
+        r2 = sources.set_enabled("rss", True)
+        assert r2["enabled"] is True
+        r3 = sources.add_feed("测试源", "https://t.example.com/feed", "tech")
+        assert r3["ok"]
+        feeds = sources.load_config()["sources"]["rss"]["feeds"]
+        assert any(f["url"] == "https://t.example.com/feed" for f in feeds)
+    finally:
+        open(sources.CONFIG_PATH, "w", encoding="utf-8").write(backup)
+
+
+def test_api_v4_routes_registered():
+    """API v4 路由: 验证多源端点存在。"""
+    from reserve import api as api_mod
+    src = open(api_mod.__file__, encoding="utf-8").read()
+    for route in ("/api/v1/sources", "/api/v1/digest", "/api/v1/sources/fetch",
+                  "/api/v1/sources/enable", "/api/v1/sources/config",
+                  "/api/v1/sources/feeds", "/api/v1/sources/adapters"):
+        assert route in src, f"missing v4 route: {route}"
+
+
+def test_feed_adapter_items_integration():
+    """ISSUE #5: 多源适配器条目汇入对外信息流 (feed.py _adapter_to_item / _load_adapter_items)。"""
+    from reserve.feed import _adapter_to_item, _load_adapter_items
+    # 单条归一化
+    it = _adapter_to_item({
+        "source": "cnb", "item_id": "o/r", "title": "o/r",
+        "url": "https://cnb.cool/o/r", "summary": "desc", "category": "repos",
+        "tags": ["mcp"], "score": 10,
+        "extra": {"platform": "cnb", "language": "Python"},
+    })
+    assert it is not None
+    assert it["source"] == "cnb-projects"
+    assert it["type"] == "cnb-project"
+    assert it["stars"] == 10
+    assert it["function_tags"] == ["mcp"]
+    # 未知源跳过
+    assert _adapter_to_item({"source": "unknown"}) is None
+    # 读缓存 (提交的 pipeline/data/sources/*.json)
+    items = _load_adapter_items()
+    sources = {i["source"] for i in items}
+    assert "cnb-projects" in sources or "papers" in sources
+
+
+def test_feed_get_feed_includes_adapters():
+    """get_feed 输出包含多源条目 (repos + papers/news/trend 等)。"""
+    from reserve.feed import get_feed
+    d = get_feed(mode="ai", limit=500, prefer_snapshot=True)
+    srcs = {it.get("source") for it in d.get("items", [])}
+    # 快照 repo + 适配器源 (cnb/papers/tech-trends/news)
+    assert "github-repos" in srcs or "cnb-projects" in srcs
+    assert d["meta"]["schema_version"] == "1.0"
+
+
+# ============================================================
+# v4.2: 多源条目 LanceDB 入库 (ISSUE #5: 数据保存到 LanceDB, 按时间和功能排布)
+# ============================================================
+
+def test_store_items_upsert_query(tmp_path):
+    """source_items 表: 入库 + 按时间/功能排布查询。"""
+    import os
+    os.environ["LANCE_DIR"] = str(tmp_path)
+    try:
+        from reserve.store import ReserveStore, normalize_item_row
+        store = ReserveStore()
+        items = [
+            {"source": "cnb", "item_id": "o/r1", "title": "o/r1",
+             "category": "repos", "tags": ["mcp"], "score": 10,
+             "published_at": "2026-08-09T00:00:00Z"},
+            {"source": "arxiv", "item_id": "2608.00001", "title": "Paper X",
+             "category": "papers", "tags": ["llm"], "score": 5,
+             "published_at": "2026-08-09T00:00:00Z"},
+            {"source": "cnb", "item_id": "o/r2", "title": "o/r2",
+             "category": "repos", "tags": ["rag"], "score": 20,
+             "published_at": "2026-08-08T00:00:00Z"},
+        ]
+        stats = store.upsert_items(items, date="2026-08-09")
+        assert stats["total"] == 3
+        assert stats["inserted"] == 3
+
+        # 按日期查询
+        rows = store.items_query(date="2026-08-09")
+        assert len(rows) == 3
+        # 按功能类别查询
+        papers = store.items_query(category="papers")
+        assert len(papers) == 1 and papers[0]["title"] == "Paper X"
+        # 按标签查询
+        mcp = store.items_query(tag="mcp")
+        assert len(mcp) == 1 and mcp[0]["item_id"] == "o/r1"
+        # 按源查询
+        cnb = store.items_query(source="cnb")
+        assert len(cnb) == 2
+        # 按热度排序
+        hot = store.items_query(sort="score_desc")
+        assert hot[0]["score"] == 20.0
+        # 日期列表
+        assert "2026-08-09" in store.items_dates()
+        assert store.items_count() == 3
+
+        # 重复入库 -> 更新 (不重复插入)
+        stats2 = store.upsert_items(items[:1], date="2026-08-09")
+        assert stats2["updated"] == 1 and stats2["inserted"] == 0
+        assert store.items_count() == 3
+    finally:
+        os.environ.pop("LANCE_DIR", None)
+
+
+def test_store_items_row_normalization():
+    """normalize_item_row: 字段归一化 + search_text 拼接。"""
+    from reserve.store import normalize_item_row, ITEMS_FTS_COLUMN
+    row = normalize_item_row({
+        "source": "cnb", "item_id": "x", "title": "T", "category": "repos",
+        "tags": ["mcp", "ai"], "score": 3, "extra": {"platform": "cnb"},
+    }, date="2026-08-09")
+    assert row["date"] == "2026-08-09"
+    assert row["tags"] == ["mcp", "ai"]
+    assert row["score"] == 3.0
+    assert "t" in row[ITEMS_FTS_COLUMN] and "mcp" in row[ITEMS_FTS_COLUMN]
+    import json
+    assert json.loads(row["extra"]) == {"platform": "cnb"}
+
+
+def test_sources_fetch_all_to_store(tmp_path):
+    """fetch_all_to_store: 拉取后写入 LanceDB source_items 表。"""
+    import os
+    os.environ["LANCE_DIR"] = str(tmp_path)
+    try:
+        from reserve.sources import fetch_all_to_store
+        # 只拉 cnb (CLI 可用走真实, 否则 demo), 其余源跳过网络
+        out = fetch_all_to_store(only=["cnb"], write_cache=False)
+        assert "results" in out and "store" in out
+        assert out["store"]["table"] == "source_items"
+        from reserve.store import ReserveStore
+        store = ReserveStore()
+        assert store.items_count() >= 1
+    finally:
+        os.environ.pop("LANCE_DIR", None)
+
+
+def test_feed_timeline_from_store(tmp_path):
+    """get_items_timeline: 从 LanceDB 按时间/功能排布读取。"""
+    import os
+    os.environ["LANCE_DIR"] = str(tmp_path)
+    try:
+        from reserve.store import ReserveStore
+        store = ReserveStore()
+        store.upsert_items([
+            {"source": "cnb", "item_id": "o/r1", "title": "o/r1",
+             "category": "repos", "tags": ["mcp"], "score": 10,
+             "published_at": "2026-08-09T00:00:00Z"},
+            {"source": "arxiv", "item_id": "p1", "title": "Paper 1",
+             "category": "papers", "tags": ["llm"], "score": 5,
+             "published_at": "2026-08-09T00:00:00Z"},
+        ], date="2026-08-09")
+        from reserve.feed import get_items_timeline
+        tl = get_items_timeline(category="papers", store=store)
+        assert tl["mode"] == "timeline"
+        assert len(tl["items"]) == 1
+        assert tl["items"][0]["source"] == "papers"
+        assert tl["items"][0]["type"] == "paper"
+        assert tl["available_dates"] == ["2026-08-09"]
+    finally:
+        os.environ.pop("LANCE_DIR", None)
+
+
+def test_api_items_routes_registered():
+    """API 路由: 多源条目时间线端点存在。"""
+    from reserve import api as api_mod
+    src = open(api_mod.__file__, encoding="utf-8").read()
+    for route in ("/api/v1/items", "/api/v1/items/timeline", "/api/v1/items/dates"):
+        assert route in src, f"missing route: {route}"
+    from reserve.fastapi_app import app
+    routes = {getattr(r, "path", "") for r in app.routes}
+    assert "/api/v1/items" in routes
+    assert "/api/v1/items/dates" in routes
+
+
+if __name__ == "__main__":
+    sys.exit(main())

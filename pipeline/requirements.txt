@@ -22,3 +22,8 @@ pydantic>=2.5
 # 可选 (测试)
 # pytest>=7.0
 # httpx2>=0.27
+
+# FastAPI 聚合管理 + 对外信息流 (reserve/fastapi_app.py, ISSUE #4/#5)
+fastapi>=0.110
+uvicorn>=0.27
+pydantic>=2.0

@@ -1,0 +1,1012 @@
+{
+  "source": "cnb",
+  "fetched_at": "2026-08-09T20:48:43.474935+00:00",
+  "count": 16,
+  "items": [
+    {
+      "source": "cnb",
+      "item_id": "dolphin738/investment-tracker",
+      "title": "dolphin738/investment-tracker",
+      "url": "https://cnb.cool/dolphin738/investment-tracker",
+      "summary": "",
+      "published_at": "2026-08-08T05:54:40+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "TypeScript",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2085967910774648832",
+        "name": "investment-tracker",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-08T05:54:40Z",
+        "updated_at": "2026-08-09T20:47:32Z",
+        "description": "",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T20:47:31Z",
+        "web_url": "https://cnb.cool/dolphin738/investment-tracker",
+        "path": "dolphin738/investment-tracker",
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "TypeScript",
+          "color": "#3178c6"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "dolphin738",
+        "last_update_nickname": "行素"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "lei/worker",
+      "title": "lei/worker",
+      "url": "https://cnb.cool/lei/worker",
+      "summary": "",
+      "published_at": "2026-08-08T15:35:02+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "NOASSERTION",
+        "language": "TypeScript",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086113963005878272",
+        "name": "worker",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-08T15:35:02Z",
+        "updated_at": "2026-08-09T20:46:26Z",
+        "description": "",
+        "site": "",
+        "topics": "",
+        "license": "NOASSERTION",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T20:46:25Z",
+        "web_url": "https://cnb.cool/lei/worker",
+        "path": "lei/worker",
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "TypeScript",
+          "color": "#3178c6"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "wolone",
+        "last_update_nickname": "镭"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "yiba1978/HeZuo-Xu",
+      "title": "yiba1978/HeZuo-Xu",
+      "url": "https://cnb.cool/yiba1978/HeZuo-Xu",
+      "summary": "",
+      "published_at": "2026-08-09T20:46:10+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "Shell",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086554652459544576",
+        "name": "HeZuo-Xu",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-09T20:46:10Z",
+        "updated_at": "2026-08-09T20:46:10Z",
+        "description": "",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T20:46:10Z",
+        "web_url": "https://cnb.cool/yiba1978/HeZuo-Xu",
+        "path": "yiba1978/HeZuo-Xu",
+        "forked_from_repo": {
+          "resource_id": 2050913970021478400,
+          "resource_type": 1,
+          "path": "SKDZSS90/HeZuo-Xu",
+          "created_at": "0001-01-01T00:00:00Z",
+          "updated_at": "0001-01-01T00:00:00Z"
+        },
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "Shell",
+          "color": "#89e051"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.cQv5U3H8wEA",
+        "last_update_nickname": "奕爸"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "CENGG-2026/cengg",
+      "title": "CENGG-2026/cengg",
+      "url": "https://cnb.cool/CENGG-2026/cengg",
+      "summary": "游戏开发任务",
+      "published_at": "2026-08-09T19:50:57+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "Python",
+        "open_issues": 2,
+        "open_prs": 2,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086540754595495936",
+        "name": "cengg",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "NPC",
+        "created_at": "2026-08-09T19:50:57Z",
+        "updated_at": "2026-08-09T20:45:21Z",
+        "description": "游戏开发任务",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T20:45:20Z",
+        "web_url": "https://cnb.cool/CENGG-2026/cengg",
+        "path": "CENGG-2026/cengg",
+        "tags": null,
+        "open_issue_count": 2,
+        "open_pull_request_count": 2,
+        "languages": {
+          "language": "Python",
+          "color": "#3572A5"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.cQfvlS63hPA",
+        "last_update_nickname": "123"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "jinbufenzi/radar-dashboard",
+      "title": "jinbufenzi/radar-dashboard",
+      "url": "https://cnb.cool/jinbufenzi/radar-dashboard",
+      "summary": "",
+      "published_at": "2026-08-09T16:21:32+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "MIT",
+        "language": "HTML",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086488052805025792",
+        "name": "radar-dashboard",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-09T16:21:32Z",
+        "updated_at": "2026-08-09T20:43:56Z",
+        "description": "",
+        "site": "",
+        "topics": "",
+        "license": "MIT",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T20:43:55Z",
+        "web_url": "https://cnb.cool/jinbufenzi/radar-dashboard",
+        "path": "jinbufenzi/radar-dashboard",
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "HTML",
+          "color": "#e34c26"
+        },
+        "second_languages": {
+          "language": "Python",
+          "color": "#3572A5"
+        },
+        "last_update_username": "1126020877",
+        "last_update_nickname": "李雪含"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "illya317/natsu",
+      "title": "illya317/natsu",
+      "url": "https://cnb.cool/illya317/natsu",
+      "summary": "",
+      "published_at": "2026-08-09T11:55:14+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "Python",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086421036604235776",
+        "name": "natsu",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-09T11:55:14Z",
+        "updated_at": "2026-08-09T20:38:53Z",
+        "description": "",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T20:38:53Z",
+        "web_url": "https://cnb.cool/illya317/natsu",
+        "path": "illya317/natsu",
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "Python",
+          "color": "#3572A5"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "illya317",
+        "last_update_nickname": "Yufan"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "digi-workers/digi-reviewer",
+      "title": "digi-workers/digi-reviewer",
+      "url": "https://cnb.cool/digi-workers/digi-reviewer",
+      "summary": "1. 先读取 PR 标题、描述、关联 Issue 和完整 diff。\n        2. 再查看必要的上下文代码、配置文件和已有测试。\n        3. 只审查与当前变更直接相关的内容。\n        4. 不因为个人代码风格偏好提出无关意见。\n        5. 对不确定的问题，先查证代码逻辑，不要把猜测当成事实。",
+      "published_at": "2026-08-09T20:31:20+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 1.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086550919201832960",
+        "name": "digi-reviewer",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "NPC",
+        "created_at": "2026-08-09T20:31:20Z",
+        "updated_at": "2026-08-09T20:36:17Z",
+        "description": "1. 先读取 PR 标题、描述、关联 Issue 和完整 diff。\n        2. 再查看必要的上下文代码、配置文件和已有测试。\n        3. 只审查与当前变更直接相关的内容。\n        4. 不因为个人代码风格偏好提出无关意见。\n        5. 对不确定的问题，先查证代码逻辑，不要把猜测当成事实。",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 1,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 1,
+        "last_updated_at": "2026-08-09T20:36:16Z",
+        "web_url": "https://cnb.cool/digi-workers/digi-reviewer",
+        "path": "digi-workers/digi-reviewer",
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "",
+          "color": ""
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.cQPU6n27wHA",
+        "last_update_nickname": "Lightning"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "yypc168/jerry",
+      "title": "yypc168/jerry",
+      "url": "https://cnb.cool/yypc168/jerry",
+      "summary": "",
+      "published_at": "2026-08-07T12:34:25+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "HTML",
+        "open_issues": 1,
+        "open_prs": 4,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2085706124259373056",
+        "name": "jerry",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-07T12:34:25Z",
+        "updated_at": "2026-08-09T20:31:38Z",
+        "description": "",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T20:31:37Z",
+        "web_url": "https://cnb.cool/yypc168/jerry",
+        "path": "yypc168/jerry",
+        "tags": null,
+        "open_issue_count": 1,
+        "open_pull_request_count": 4,
+        "languages": {
+          "language": "HTML",
+          "color": "#e34c26"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.cEv6c8JswEA",
+        "last_update_nickname": "夜雨飘澄"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "ding2026/NPC",
+      "title": "ding2026/NPC",
+      "url": "https://cnb.cool/ding2026/NPC",
+      "summary": "热门NPC实时更新",
+      "published_at": "2026-08-07T04:28:33+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "HTML",
+        "open_issues": 1,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2085583849577132032",
+        "name": "NPC",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-07T04:28:33Z",
+        "updated_at": "2026-08-09T20:30:16Z",
+        "description": "热门NPC实时更新",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T20:30:16Z",
+        "web_url": "https://cnb.cool/ding2026/NPC",
+        "path": "ding2026/NPC",
+        "tags": null,
+        "open_issue_count": 1,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "HTML",
+          "color": "#e34c26"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.cEPcLaCswEA",
+        "last_update_nickname": "东"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "digi-workers/digi-reviewer-bk",
+      "title": "digi-workers/digi-reviewer-bk",
+      "url": "https://cnb.cool/digi-workers/digi-reviewer-bk",
+      "summary": "",
+      "published_at": "2026-08-09T10:07:33+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "Dockerfile",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086393939561422848",
+        "name": "digi-reviewer-bk",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "NPC",
+        "created_at": "2026-08-09T10:07:33Z",
+        "updated_at": "2026-08-09T20:30:09Z",
+        "description": "",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T10:07:33Z",
+        "web_url": "https://cnb.cool/digi-workers/digi-reviewer-bk",
+        "path": "digi-workers/digi-reviewer-bk",
+        "forked_from_repo": {
+          "resource_id": 2082381538025341000,
+          "resource_type": 1,
+          "path": "huashu-2026/hua-lao-yan",
+          "created_at": "0001-01-01T00:00:00Z",
+          "updated_at": "0001-01-01T00:00:00Z"
+        },
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "Dockerfile",
+          "color": "#384d54"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.cQPU6n27wHA",
+        "last_update_nickname": "Lightning"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "hiokr8/eng-kit",
+      "title": "hiokr8/eng-kit",
+      "url": "https://cnb.cool/hiokr8/eng-kit",
+      "summary": "Ai Vija 通用工程规范资产（eng-kit 软链分发源）",
+      "published_at": "2026-08-09T01:39:28+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "Python",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086266073368633344",
+        "name": "eng-kit",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-09T01:39:28Z",
+        "updated_at": "2026-08-09T20:30:01Z",
+        "description": "Ai Vija 通用工程规范资产（eng-kit 软链分发源）",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T20:30:01Z",
+        "web_url": "https://cnb.cool/hiokr8/eng-kit",
+        "path": "hiokr8/eng-kit",
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "Python",
+          "color": "#3572A5"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.cgO0LrCrQEA",
+        "last_update_nickname": "CLICK(王）"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "azrb/lingran-auth-center",
+      "title": "azrb/lingran-auth-center",
+      "url": "https://cnb.cool/azrb/lingran-auth-center",
+      "summary": "在线授权系统，面向个人自建项目的鉴权服务，统一管理授权凭证，校验域名，维护版本更新资源，为各类自研小工具提供鉴权校验与在线升级能力",
+      "published_at": "2026-08-08T22:22:41+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "Python",
+        "open_issues": 1,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086216554987012096",
+        "name": "lingran-auth-center",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-08T22:22:41Z",
+        "updated_at": "2026-08-09T20:20:39Z",
+        "description": "在线授权系统，面向个人自建项目的鉴权服务，统一管理授权凭证，校验域名，维护版本更新资源，为各类自研小工具提供鉴权校验与在线升级能力",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T20:20:39Z",
+        "web_url": "https://cnb.cool/azrb/lingran-auth-center",
+        "path": "azrb/lingran-auth-center",
+        "tags": null,
+        "open_issue_count": 1,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "Python",
+          "color": "#3572A5"
+        },
+        "second_languages": {
+          "language": "HTML",
+          "color": "#e34c26"
+        },
+        "last_update_username": "cnb.cEftq9WYhJA",
+        "last_update_nickname": "泠然"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "pursuit806/to-spec",
+      "title": "pursuit806/to-spec",
+      "url": "https://cnb.cool/pursuit806/to-spec",
+      "summary": "to-spec skill: turn conversation into spec and publish to issue tracker",
+      "published_at": "2026-08-08T15:19:15+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086109993868894208",
+        "name": "to-spec",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Skills",
+        "created_at": "2026-08-08T15:19:15Z",
+        "updated_at": "2026-08-09T20:17:43Z",
+        "description": "to-spec skill: turn conversation into spec and publish to issue tracker",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T20:17:43Z",
+        "web_url": "https://cnb.cool/pursuit806/to-spec",
+        "path": "pursuit806/to-spec",
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "",
+          "color": ""
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "Pursuit806",
+        "last_update_nickname": "Pursuit",
+        "skill_scan_status": "white"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "cnb888666666/comfyui-flows",
+      "title": "cnb888666666/comfyui-flows",
+      "url": "https://cnb.cool/cnb888666666/comfyui-flows",
+      "summary": "AI生图",
+      "published_at": "2026-08-09T20:08:58+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "Shell",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086545288445837312",
+        "name": "comfyui-flows",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-09T20:08:58Z",
+        "updated_at": "2026-08-09T20:08:58Z",
+        "description": "AI生图",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T20:08:57Z",
+        "web_url": "https://cnb.cool/cnb888666666/comfyui-flows",
+        "path": "cnb888666666/comfyui-flows",
+        "forked_from_repo": {
+          "resource_id": 1891553890901074000,
+          "resource_type": 1,
+          "path": "pylover/comfyui-flows",
+          "created_at": "0001-01-01T00:00:00Z",
+          "updated_at": "0001-01-01T00:00:00Z"
+        },
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "Shell",
+          "color": "#89e051"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.cQfw3f7wATA",
+        "last_update_nickname": "Chen"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "yuey.mpi/chat-batch-workspace",
+      "title": "yuey.mpi/chat-batch-workspace",
+      "url": "https://cnb.cool/yuey.mpi/chat-batch-workspace",
+      "summary": "",
+      "published_at": "2026-08-09T11:13:52+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "TypeScript",
+        "open_issues": 2,
+        "open_prs": 4,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086410626316541952",
+        "name": "chat-batch-workspace",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "Unknown",
+        "created_at": "2026-08-09T11:13:52Z",
+        "updated_at": "2026-08-09T20:03:42Z",
+        "description": "",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T20:36:42Z",
+        "web_url": "https://cnb.cool/yuey.mpi/chat-batch-workspace",
+        "path": "yuey.mpi/chat-batch-workspace",
+        "tags": null,
+        "open_issue_count": 2,
+        "open_pull_request_count": 4,
+        "languages": {
+          "language": "TypeScript",
+          "color": "#3178c6"
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.cQPSElxLwHA",
+        "last_update_nickname": "Serein"
+      }
+    },
+    {
+      "source": "cnb",
+      "item_id": "digi-workers/codebuddy",
+      "title": "digi-workers/codebuddy",
+      "url": "https://cnb.cool/digi-workers/codebuddy",
+      "summary": "CodeBuddy Code",
+      "published_at": "2026-08-09T20:00:01+00:00",
+      "category": "repos",
+      "tags": [],
+      "score": 0.0,
+      "extra": {
+        "platform": "cnb",
+        "forks": 0,
+        "license": "",
+        "language": "",
+        "open_issues": 0,
+        "open_prs": 0,
+        "visibility": "Public"
+      },
+      "raw": {
+        "id": "2086543039036534784",
+        "name": "codebuddy",
+        "freeze": false,
+        "status": 0,
+        "visibility_level": "Public",
+        "flags": "NPC",
+        "created_at": "2026-08-09T20:00:01Z",
+        "updated_at": "2026-08-09T20:00:01Z",
+        "description": "CodeBuddy Code",
+        "site": "",
+        "topics": "",
+        "license": "",
+        "display_module": {
+          "activity": true,
+          "contributors": true,
+          "release": true
+        },
+        "star_count": 0,
+        "fork_count": 0,
+        "mark_count": 0,
+        "npc_created_pull_count": 0,
+        "npc_merged_pull_count": 0,
+        "npc_builded_count": 0,
+        "last_updated_at": "2026-08-09T20:00:01Z",
+        "web_url": "https://cnb.cool/digi-workers/codebuddy",
+        "path": "digi-workers/codebuddy",
+        "forked_from_repo": {
+          "resource_id": 2050901514914885600,
+          "resource_type": 1,
+          "path": "npc/CodeBuddy",
+          "created_at": "0001-01-01T00:00:00Z",
+          "updated_at": "0001-01-01T00:00:00Z"
+        },
+        "tags": null,
+        "open_issue_count": 0,
+        "open_pull_request_count": 0,
+        "languages": {
+          "language": "",
+          "color": ""
+        },
+        "second_languages": {
+          "language": "",
+          "color": ""
+        },
+        "last_update_username": "cnb.cQPU6n27wHA",
+        "last_update_nickname": "Lightning"
+      }
+    }
+  ]
+}

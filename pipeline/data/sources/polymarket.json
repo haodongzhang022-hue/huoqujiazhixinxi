@@ -1,0 +1,76 @@
+{
+  "source": "polymarket",
+  "fetched_at": "2026-08-09T20:46:48.361902+00:00",
+  "count": 3,
+  "items": [
+    {
+      "source": "polymarket",
+      "item_id": "demo-pm-1",
+      "title": "[演示] 2026 年底前 AGI 是否出现 (示例预测事件)",
+      "url": "https://polymarket.com/event/demo-agi",
+      "summary": "",
+      "published_at": "2026-08-09T20:46:48.360964+00:00",
+      "category": "prediction",
+      "tags": [
+        "polymarket",
+        "demo"
+      ],
+      "score": 1200000.0,
+      "extra": {
+        "platform": "polymarket",
+        "probability_yes": 0.12,
+        "volume": 1200000,
+        "volume24hr": 35000,
+        "liquidity": 80000,
+        "end_date": "2026-12-31T00:00:00Z"
+      },
+      "raw": {}
+    },
+    {
+      "source": "polymarket",
+      "item_id": "demo-pm-2",
+      "title": "[演示] 某大厂 Q4 是否发布自研芯片 (示例预测事件)",
+      "url": "https://polymarket.com/event/demo-chip",
+      "summary": "",
+      "published_at": "2026-08-09T20:46:48.360964+00:00",
+      "category": "prediction",
+      "tags": [
+        "polymarket",
+        "demo"
+      ],
+      "score": 860000.0,
+      "extra": {
+        "platform": "polymarket",
+        "probability_yes": 0.43,
+        "volume": 860000,
+        "volume24hr": 21000,
+        "liquidity": 50000,
+        "end_date": "2026-12-31T00:00:00Z"
+      },
+      "raw": {}
+    },
+    {
+      "source": "polymarket",
+      "item_id": "demo-pm-3",
+      "title": "[演示] 某开源模型是否登顶 LLM 榜单 (示例预测事件)",
+      "url": "https://polymarket.com/event/demo-llm",
+      "summary": "",
+      "published_at": "2026-08-09T20:46:48.360964+00:00",
+      "category": "prediction",
+      "tags": [
+        "polymarket",
+        "demo"
+      ],
+      "score": 540000.0,
+      "extra": {
+        "platform": "polymarket",
+        "probability_yes": 0.67,
+        "volume": 540000,
+        "volume24hr": 12000,
+        "liquidity": 30000,
+        "end_date": "2026-12-31T00:00:00Z"
+      },
+      "raw": {}
+    }
+  ]
+}
