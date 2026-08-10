@@ -62,6 +62,55 @@ def test_dim_label():
     assert "期货" in dim_label(d) or "合约" in dim_label(d)
 
 
+# ---------- 分层漏斗 (功能域分层) ----------
+
+def test_layers_funnel_definition():
+    """功能域分层漏斗: 6 层按深度升序, 每层对应一个 Dim 字段。"""
+    from reserve.relations.dims import layers, funnel_depth
+    ls = layers()
+    # 漏斗: 资产大类 -> 地区 -> 交易所 -> 品种 -> 交易类型 -> 时间级别
+    assert [l["id"] for l in ls] == [
+        "data_class", "region", "exchange", "instrument", "trade_type", "time_level"]
+    # 深度递增
+    assert [l["order"] for l in ls] == [0, 1, 2, 3, 4, 5]
+    assert funnel_depth("market") == 0   # 资产大类在最顶
+    assert funnel_depth("timeframe") == 5  # 时间级别在最底
+
+
+def test_dim_funnel_path():
+    """维度能展开成分层漏斗路径。"""
+    d = parse_dim("futures.CN.SHFE.CU.futures.1d")
+    p = d.path()
+    assert p[0].startswith("资产大类:futures")
+    assert any(x.startswith("品种:CU") for x in p)
+    assert p[-1].startswith("时间级别:1d")
+    # 未指定的层不出现
+    assert len(parse_dim("futures.CU").path()) == 2
+
+
+def test_relationship_intra_vs_inter_layer():
+    """层内 vs 层间判定: 同一资产大类=层内, 跨资产大类=层间。"""
+    from reserve.relations.dims import relationship_kind
+    a = parse_dim("equity.CN.SSE.000300.index.1d")
+    # 同品种不同交易类型 -> 层内 (同功能域分支内部联动)
+    b = parse_dim("equity.CN.SSE.000300.etf.1d")
+    assert relationship_kind(a, b)["kind"] == "intra_layer"
+    # 同品种不同时间级别 -> 层内
+    c = parse_dim("crypto.global.CRYPTO.BTC.spot.4h")
+    d = parse_dim("crypto.global.CRYPTO.BTC.spot.1d")
+    assert relationship_kind(c, d)["kind"] == "intra_layer"
+    # 同大类不同地区 -> 层内
+    assert relationship_kind(parse_dim("equity.CN"), parse_dim("equity.US"))["kind"] == "intra_layer"
+    # 跨资产大类 (股票 vs 期货) -> 层间
+    e = parse_dim("futures.CN.SHFE.CU.futures.1d")
+    assert relationship_kind(a, e)["kind"] == "inter_layer"
+    # 宏观利率 -> 股票 -> 层间
+    macro = parse_dim("macro.global.MACRO.US10Y.rate.1d")
+    assert relationship_kind(macro, a)["kind"] == "inter_layer"
+    # 自环
+    assert relationship_kind(a, a)["kind"] == "same_node"
+
+
 # ---------- frame ----------
 
 def test_ordered_pairs_directional():
@@ -315,6 +364,15 @@ def test_network_build():
     assert "summary" in net
     assert net["summary"]["node_count"] >= 2
     assert net["summary"]["top_hubs"]
+    # 分层漏斗: 边带层内/层间标记, 节点带功能域归属
+    assert "intra_layer_edges" in net["summary"]
+    assert "inter_layer_edges" in net["summary"]
+    assert any("relation_kind" in e for e in net["edges"])
+    assert all("funnel" in n for n in net["nodes"])
+    assert "layer_groups" in net and net["layer_groups"]
+    # 演示数据应同时存在层内(同品种不同交易类型/时间级别)与层间(跨资产大类)边
+    kinds = {e["relation_kind"] for e in net["edges"]}
+    assert "intra_layer" in kinds and "inter_layer" in kinds
 
 
 def test_strongest_paths():
@@ -386,6 +444,40 @@ def test_api_relations_network_endpoint():
             assert data["nodes"]
             assert data["summary"]["node_count"] >= 2
             assert "clusters" in data
+            # 分层漏斗: 网络应带层内/层间边统计
+            assert "intra_layer_edges" in data["summary"]
+            assert "inter_layer_edges" in data["summary"]
+        finally:
+            os.environ.pop("RELATION_DIR", None)
+
+
+def test_api_relations_edges_layer_filter():
+    """边列表端点: 按层内/层间(rel)筛选多级漏斗。"""
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        os.environ["RELATION_DIR"] = td
+        try:
+            from reserve.relations.demo import build_panel, demo_summary
+            panel = build_panel(days=80)
+            demo_summary(panel, model="linear", max_lag=4, top=3)
+            from fastapi.testclient import TestClient
+            from reserve.fastapi_app import app
+            client = TestClient(app)
+            r = client.get("/api/v1/relations/edges?limit=100")
+            assert r.status_code == 200
+            assert r.json()["count"] > 0
+            # 层内筛选
+            r_intra = client.get("/api/v1/relations/edges?limit=100&rel=intra_layer")
+            intra = r_intra.json()
+            assert intra["count"] > 0
+            assert all(e["relation_kind"] == "intra_layer" for e in intra["items"])
+            # 层间筛选
+            r_inter = client.get("/api/v1/relations/edges?limit=100&rel=inter_layer")
+            inter = r_inter.json()
+            assert inter["count"] > 0
+            assert all(e["relation_kind"] == "inter_layer" for e in inter["items"])
+            # 两者之和应等于总数(无重叠)
+            assert intra["count"] + inter["count"] == r.json()["count"]
         finally:
             os.environ.pop("RELATION_DIR", None)
 

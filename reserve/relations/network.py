@@ -20,6 +20,8 @@ from __future__ import annotations
 from collections import defaultdict, deque
 from typing import Any
 
+from reserve.relations.dims import Dim, parse_dim, relationship_kind, layer_of_field
+
 
 def _safe_key(d: dict) -> str:
     """把 from/to 维度字典转成规范化 key (与 dims.parse_dim().key 一致)。"""
@@ -27,6 +29,27 @@ def _safe_key(d: dict) -> str:
         return ".".join([str(d.get(k, "*")) for k in ("market", "country", "exchange",
                                                        "symbol", "asset", "timeframe")])
     return str(d)
+
+
+def _dim_obj(d) -> Dim:
+    """把维度字典/字符串/Dim 统一转成 Dim 对象。"""
+    if isinstance(d, Dim):
+        return d
+    return parse_dim(d)
+
+
+def _layer_group(dim: Dim) -> str:
+    """节点所属的功能域分层分组：取维度里**最顶层(漏斗口)**已指定字段作为分组标签。
+
+    用于漏斗分层展示——同一资产大类(功能域)的节点归到同一组/行，
+    体现“漏斗：资产大类 → 地区 → 交易所 → 品种 → 交易类型 → 时间级别”。
+    """
+    act = dim.active_layers()
+    if not act:
+        return "*"
+    # 取漏斗最顶层（最靠漏斗口、最深/最粗的功能域）作为归属
+    top = act[0]
+    return f"{top['label']}·{top['value']}"
 
 
 def build_network(edges: list[dict], min_strength: float = 0.1) -> dict:
@@ -43,11 +66,17 @@ def build_network(edges: list[dict], min_strength: float = 0.1) -> dict:
         tk = _safe_key(e.get("to"))
         if fk == tk:
             continue
-        for k, label in ((fk, e.get("from")), (tk, e.get("to"))):
+        f_dim = _dim_obj(e.get("from"))
+        t_dim = _dim_obj(e.get("to"))
+        rel = relationship_kind(f_dim, t_dim)
+        for k, label, dim in ((fk, e.get("from"), f_dim), (tk, e.get("to"), t_dim)):
             if k not in nodes:
                 nodes[k] = {
                     "key": k,
                     "dim": label,
+                    "funnel": dim.funnel_label(),
+                    "layer_group": _layer_group(dim),
+                    "active_layers": dim.active_layers(),
                     "in_strength": 0.0,
                     "out_strength": 0.0,
                     "total_strength": 0.0,
@@ -73,6 +102,11 @@ def build_network(edges: list[dict], min_strength: float = 0.1) -> dict:
             "lag": e.get("lag", 0),
             "stability": round(float(e.get("stability") or 0.0), 4),
             "model": e.get("model", ""),
+            "relation_kind": rel["kind"],
+            "intra_layer": rel["kind"] == "intra_layer",
+            "inter_layer": rel["kind"] == "inter_layer",
+            "diff_fields": rel.get("diff_fields", []),
+            "boundary_layer": rel.get("boundary_layer"),
             "verdict": (e.get("comparison") or {}).get("verdict")
             if isinstance(e.get("comparison"), dict) else None,
         })
@@ -90,13 +124,28 @@ def build_network(edges: list[dict], min_strength: float = 0.1) -> dict:
 
     # 强关联簇 (自底向上凝聚: 把双向且强度达阈值的节点归并)
     clusters = _cluster(nodes, links, adj, min_strength)
+    # 层内/层间统计 (漏斗分层视角)
+    intra = [l for l in links if l["intra_layer"]]
+    inter = [l for l in links if l["inter_layer"]]
+    # 按功能域层分组 (layer_group) 归集节点
+    by_group: dict[str, list[dict]] = defaultdict(list)
+    for n in nodes.values():
+        by_group[n["layer_group"]].append(n)
+    layer_groups = [
+        {"label": g, "nodes": sorted(v, key=lambda x: -x["total_strength"]),
+         "count": len(v)}
+        for g, v in sorted(by_group.items(), key=lambda kv: -len(kv[1]))
+    ]
     return {
         "nodes": sorted(nodes.values(), key=lambda v: -v["total_centrality"]),
         "edges": links,
         "clusters": clusters,
+        "layer_groups": layer_groups,
         "summary": {
             "node_count": len(nodes),
             "edge_count": len(links),
+            "intra_layer_edges": len(intra),
+            "inter_layer_edges": len(inter),
             "density": round(len(links) / (len(nodes) * (len(nodes) - 1)), 4)
             if len(nodes) > 1 else 0.0,
             "cluster_count": len(clusters),

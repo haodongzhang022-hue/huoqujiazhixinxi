@@ -270,11 +270,13 @@ def api_relations_edges(
     min_strength: float = Query(0.0, ge=0.0, le=1.0),
     model: Optional[str] = Query(None, description="模型类型过滤"),
     verdict: Optional[str] = Query(None, description="预测能力评价过滤: strong/good/weak/insufficient"),
+    rel: Optional[str] = Query(None, description="关系类型过滤: intra_layer(层内) | inter_layer(层间)"),
     limit: int = Query(200, ge=1, le=2000),
     offset: int = Query(0, ge=0),
     sort: str = Query("strength", description="strength|stability|lag|sample_size"),
 ):
-    """两两关联边列表 (A→B, 每条独立)。"""
+    """两两关联边列表 (A→B, 每条独立)。支持按功能域分层漏斗筛选。"""
+    from reserve.relations.dims import relationship_kind
     store = _relation_store()
     edges = store.list_edges()
     # 附带预测对比摘要 (verdict / 测试段指标), 便于表格直接展示预测能力
@@ -285,11 +287,20 @@ def api_relations_edges(
             e["comparison"] = {"verdict": c.get("verdict"),
                                "metrics": c.get("metrics"),
                                "iterations": c.get("iterations")}
+        # 标注层内/层间 (分层漏斗筛选)
+        try:
+            e["relation_kind"] = relationship_kind(e.get("from") or {}, e.get("to") or {})["kind"]
+            e["intra_layer"] = e["relation_kind"] == "intra_layer"
+            e["inter_layer"] = e["relation_kind"] == "inter_layer"
+        except Exception:
+            e["relation_kind"] = ""
     if model:
         edges = [e for e in edges if e.get("model") == model]
     if verdict:
         comps = {c.get("edge"): c.get("verdict") for c in store.list_comparisons()}
         edges = [e for e in edges if comps.get(e.get("edge")) == verdict]
+    if rel:
+        edges = [e for e in edges if e.get("relation_kind") == rel]
     edges = [e for e in edges if (e.get("strength") or 0.0) >= min_strength]
     rev = sort == "strength" or sort == "stability" or sort == "sample_size"
     key_fn = {"strength": lambda e: e.get("strength") or 0.0,

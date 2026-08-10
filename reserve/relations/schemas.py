@@ -85,6 +85,9 @@ class ModelCompareResult(BaseModel):
 class NetworkNode(BaseModel):
     key: str = ""
     dim: Any = None
+    funnel: str = ""
+    layer_group: str = ""
+    active_layers: list[dict[str, Any]] = Field(default_factory=list)
     in_strength: float = 0.0
     out_strength: float = 0.0
     total_strength: float = 0.0
@@ -106,12 +109,19 @@ class NetworkCluster(BaseModel):
     label: str = ""
 
 
+class LayerGroup(BaseModel):
+    label: str = ""
+    nodes: list[NetworkNode] = Field(default_factory=list)
+    count: int = 0
+
+
 class RelationNetwork(BaseModel):
-    """传导网络: 节点中心性 + 强关联簇 + 网络摘要。"""
+    """传导网络: 节点中心性 + 强关联簇 + 分层漏斗(层内/层间) + 网络摘要。"""
 
     nodes: list[NetworkNode] = Field(default_factory=list)
     edges: list[dict[str, Any]] = Field(default_factory=list)
     clusters: list[NetworkCluster] = Field(default_factory=list)
+    layer_groups: list[LayerGroup] = Field(default_factory=list)
     summary: dict[str, Any] = Field(default_factory=dict)
 
 

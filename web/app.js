@@ -688,9 +688,14 @@ function edgeRow(e) {
   const r2 = e.comparison && e.comparison.metrics ? e.comparison.metrics.r2 : "";
   const bar = `<div class="rel-bar"><div class="rel-bar-fill" style="width:${Math.round((e.strength || 0) * 100)}%"></div></div>`;
   const modelTag = e.model === "rolling_corr" ? "时变相关" : e.model === "regime_shift" ? "结构突变" : e.model === "event_study" ? "事件研究" : e.model === "self_corr" ? "自相关" : e.model;
+  const layerBadge = e.inter_layer
+    ? `<span class="badge" style="background:#fb923c22;color:#fb923c">层间·跨域</span>`
+    : e.intra_layer
+      ? `<span class="badge" style="background:#34d39922;color:#34d399">层内·同域</span>` : "";
   return `
     <tr>
       <td class="rel-edge">${esc(dimShort(e.from))} <span class="arrow">→</span> ${esc(dimShort(e.to))}</td>
+      <td class="center">${layerBadge}</td>
       <td>${bar}<span class="rel-strength">${(e.strength || 0).toFixed(3)}</span></td>
       <td class="center">${e.sign > 0 ? "<span class='pos'>+</span>" : e.sign < 0 ? "<span class='neg'>−</span>" : "0"}</td>
       <td class="center">${esc(e.lag)}</td>
@@ -775,42 +780,123 @@ function drawRollingCorr(canvas, curve, title) {
 }
 
 /* 网络力导向简易图 (Canvas, 无外部依赖) */
-function drawNetwork(canvas, net, labels) {
+/* 分层漏斗拓扑图 (Canvas, 无外部依赖)
+ * 把「功能域分层」的节点按层归组渲染成自上而下的漏斗：
+ *   资产大类 → 地区 → 交易所 → 品种 → 交易类型 → 时间级别
+ * - 每一层一条横向带 (漏斗层)
+ * - 层内边 (intra_layer, 同功能域分支内联动) 用绿色短弧/点
+ * - 层间边 (inter_layer, 跨功能域传导) 用橙色长线
+ * - 节点颜色表示 hub 强度, 尺寸表示影响强度
+ */
+const FUNNEL_LAYER_IDS = ["data_class", "region", "exchange", "instrument", "trade_type", "time_level"];
+
+function nodeLayerId(n) {
+  // 节点归属：取 active_layers 里**最顶层(漏斗口)**作为该节点的功能域归属
+  const act = n.active_layers || [];
+  if (!act.length) return "*";
+  const top = act[0];
+  return top.id || "*";
+}
+
+function drawFunnel(canvas, net, labels) {
   const nodes = net.nodes || [];
   const edges = net.edges || [];
   if (!nodes.length || !canvas) return;
   const ctx = canvas.getContext("2d");
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0, 0, W, H);
-  const pad = 50;
+
+  // 按漏斗层分组节点
+  const groups = {};
+  nodes.forEach(n => {
+    const g = nodeLayerId(n);
+    (groups[g] = groups[g] || []).push(n);
+  });
+  const present = Object.keys(groups).filter(g => g !== "*");
+  const rows = present.length || 1;
+  const topPad = 34, bottomPad = 16, rowGap = 6;
+  const rowH = (H - topPad - bottomPad - rowGap * (rows - 1)) / rows;
+
+  const layerName = {};
+  const LABELS = { data_class: "资产大类/功能域", region: "地区/国家", exchange: "交易所/市场",
+                   instrument: "品种/标的", trade_type: "交易类型", time_level: "时间级别" };
+  FUNNEL_LAYER_IDS.forEach(id => { layerName[id] = LABELS[id] || id; });
+
+  const rowInfo = [];
+  present.forEach((g, i) => {
+    const y0 = topPad + i * (rowH + rowGap);
+    rowInfo.push({ g, y: y0 + rowH / 2, y0, y1: y0 + rowH, nodes: groups[g] });
+  });
+
   const byKey = {};
-  nodes.forEach((n, i) => byKey[n.key] = i);
-  // 简单圆环布局 + 按 hub 强度调整半径
-  const N = nodes.length;
-  const pos = nodes.map((n, i) => {
-    const ang = (2 * Math.PI * i) / N - Math.PI / 2;
-    const r = Math.min(W, H) / 2 - pad - (n.hub_score || 0) * 30;
-    return { x: W / 2 + r * Math.cos(ang), y: H / 2 + r * Math.sin(ang) };
+  const pos = {};
+  rowInfo.forEach(row => {
+    const g = row.g;
+    // 横向布局：按 total_strength 降序排布
+    const ns = row.nodes.slice().sort((a, b) => (b.total_strength || 0) - (a.total_strength || 0));
+    const n = ns.length;
+    const lpad = 118;  // 左侧留漏斗层标签
+    const rpad = 18;
+    ns.forEach((node, i) => {
+      const x = lpad + (i + 0.5) * (W - lpad - rpad) / n;
+      byKey[node.key] = node;
+      pos[node.key] = { x, y: row.y };
+    });
   });
-  // edges
-  edges.forEach(e => {
+
+  // 漏斗层带背景 + 标签
+  ctx.font = "11px sans-serif";
+  FUNNEL_LAYER_IDS.forEach((id, li) => {
+    const row = rowInfo.find(r => r.g === id);
+    if (!row) return;
+    ctx.fillStyle = "rgba(148,163,184,0.06)";
+    ctx.fillRect(8, row.y0, W - 16, rowH);
+    ctx.fillStyle = "rgba(148,163,184,0.5)";
+    ctx.textAlign = "left";
+    ctx.fillText(`${layerName[id]}  (L${li})`, 14, row.y0 + rowH / 2 + 4);
+  });
+
+  // 边：先画层间(长线), 再画层内(短线/弧)，避免遮挡
+  const drawEdge = (e, color, dash, width) => {
     const a = byKey[e.from], b = byKey[e.to];
-    if (a == null || b == null) return;
-    ctx.strokeStyle = e.sign >= 0 ? "rgba(52,211,153,0.35)" : "rgba(248,113,113,0.35)";
-    ctx.lineWidth = Math.max(0.5, (e.strength || 0) * 3);
-    ctx.beginPath(); ctx.moveTo(pos[a].x, pos[a].y); ctx.lineTo(pos[b].x, pos[b].y); ctx.stroke();
+    if (!a || !b) return;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.setLineDash(dash || []);
+    ctx.beginPath();
+    ctx.moveTo(pos[a.key].x, pos[a.key].y);
+    ctx.lineTo(pos[b.key].x, pos[b.key].y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  };
+  // 层间边: 跨功能域传导 (橙/红)
+  edges.filter(e => e.inter_layer).forEach(e => {
+    drawEdge(e, e.sign >= 0 ? "rgba(251,146,60,0.55)" : "rgba(248,113,113,0.55)", [4, 3], Math.max(0.5, (e.strength || 0) * 2.4));
   });
-  // nodes
-  nodes.forEach((n, i) => {
-    const r = 8 + (n.hub_score || 0) * 14;
-    ctx.beginPath(); ctx.arc(pos[i].x, pos[i].y, r, 0, Math.PI * 2);
+  // 层内边: 同功能域分支内联动 (绿)
+  edges.filter(e => e.intra_layer).forEach(e => {
+    drawEdge(e, "rgba(52,211,153,0.5)", [], Math.max(0.5, (e.strength || 0) * 2.4));
+  });
+
+  // 节点
+  nodes.forEach(n => {
+    const r = 7 + (n.hub_score || 0) * 12;
+    ctx.beginPath(); ctx.arc(pos[n.key].x, pos[n.key].y, r, 0, Math.PI * 2);
     ctx.fillStyle = n.hub_score >= 0.7 ? "#fbbf24" : n.hub_score >= 0.4 ? "#4fc3f7" : "#334155";
     ctx.fill();
     ctx.strokeStyle = "#0b1220"; ctx.lineWidth = 1.5; ctx.stroke();
     const label = (labels && labels[n.key]) || n.key.split(".").filter(s => s !== "*").join(".") || n.key;
-    ctx.fillStyle = "#cbd5e1"; ctx.font = "10px sans-serif"; ctx.textAlign = "center";
-    ctx.fillText(label.length > 14 ? label.slice(0, 13) + "…" : label, pos[i].x, pos[i].y + r + 10);
+    ctx.fillStyle = "#cbd5e1"; ctx.font = "9px sans-serif"; ctx.textAlign = "center";
+    ctx.fillText(label.length > 12 ? label.slice(0, 11) + "…" : label, pos[n.key].x, pos[n.key].y + r + 9);
   });
+
+  // 漏斗方向标注
+  ctx.fillStyle = "rgba(148,163,184,0.6)"; ctx.font = "10px sans-serif"; ctx.textAlign = "right";
+  ctx.fillText("▼ 漏斗方向: 粗(顶层) → 细(底层)", W - 12, 14);
+}
+
+function drawNetwork(canvas, net, labels) {
+  drawFunnel(canvas, net, labels);
 }
 
 async function renderRelations(container) {
@@ -839,6 +925,11 @@ async function renderRelations(container) {
         <option value="">全部模型</option>
         ${REL_MODELS.map(m => `<option value="${m}">${esc(m)}</option>`).join("")}
       </select>
+      <select id="rel-layer-filter" class="select">
+        <option value="">全部层级关系</option>
+        <option value="intra_layer">层内(同功能域)</option>
+        <option value="inter_layer">层间(跨功能域)</option>
+      </select>
       <span class="muted">矩阵 ${esc(dims.length)} 维 · ${esc(edgesData.count)} 条有向边</span>
     </div>
     <div class="stat-row">
@@ -847,16 +938,23 @@ async function renderRelations(container) {
     <div class="rel-dims muted">维度: ${dims.map(esc).join(" &nbsp;·&nbsp; ")}</div>
   </div>
   <div class="panel">
-    <h2>🕸️ 传导网络（谁影响全局 · 谁被影响最多 · 谁抱团联动）</h2>
+    <h2>🕸️ 分层漏斗 · 传导网络（按功能域分层）</h2>
+    <p class="muted">多级条件筛选的<b>分层漏斗</b>：资产大类 → 地区 → 交易所 → 品种 → 交易类型 → 时间级别。
+      每个节点归属到其最深一层功能域；<b style="color:#34d399">绿色=层内边</b>（同功能域分支内联动）
+      <b style="color:#fb923c">橙色/红色=层间边</b>（跨功能域传导）。后续模型按此分层分别学习<b>层内</b>与<b>层间</b>关系。</p>
     <div class="stat-row">
       <div class="stat-card"><div class="num">${esc(ns.node_count ?? 0)}</div><div class="label">网络节点</div></div>
       <div class="stat-card"><div class="num">${esc(ns.edge_count ?? 0)}</div><div class="label">有效边</div></div>
+      <div class="stat-card"><div class="num">${esc(ns.intra_layer_edges ?? 0)}</div><div class="label">层内边(同域)</div></div>
+      <div class="stat-card"><div class="num">${esc(ns.inter_layer_edges ?? 0)}</div><div class="label">层间边(跨域)</div></div>
       <div class="stat-card"><div class="num">${esc(ns.density ?? 0)}</div><div class="label">网络密度</div></div>
       <div class="stat-card"><div class="num">${esc(ns.cluster_count ?? 0)}</div><div class="label">联动簇</div></div>
     </div>
     <div class="rel-network-wrap">
-      <canvas id="rel-network-canvas" width="900" height="340"></canvas>
+      <canvas id="rel-network-canvas" width="900" height="360"></canvas>
     </div>
+    <div class="rel-dims muted">🧭 功能域分层: ${FUNNEL_LAYER_IDS.map(id => esc(id)).join(" → ")}</div>
+    <div class="rel-dims muted">📌 节点归属层: ${(net.layer_groups || []).map(g => esc(g.label)).join(" &nbsp;·&nbsp; ") || "-"}</div>
     <div class="rel-dims muted">
       🧭 最强枢纽: ${(ns.top_hubs || []).slice(0, 3).map(h => esc(h.key)).join(" &nbsp;·&nbsp; ") || "-"}
       &nbsp;&nbsp;|&nbsp;&nbsp;
@@ -867,8 +965,8 @@ async function renderRelations(container) {
   <div class="panel">
     <h2>📊 两两关联边（按强度排序）</h2>
     <table class="rel-table">
-      <thead><tr><th>关联 (A → B)</th><th>强度</th><th>方向</th><th>领先</th><th>稳定</th><th>模型</th><th>预测能力</th><th>评价</th><th></th></tr></thead>
-      <tbody id="rel-edges-body">${edges.map(edgeRow).join("") || '<tr><td colspan="9" class="empty">暂无数据, 点击「运行演示数据」或等待数据获取层接入</td></tr>'}</tbody>
+      <thead><tr><th>关联 (A → B)</th><th>层级</th><th>强度</th><th>方向</th><th>领先</th><th>稳定</th><th>模型</th><th>预测能力</th><th>评价</th><th></th></tr></thead>
+      <tbody id="rel-edges-body">${edges.map(edgeRow).join("") || '<tr><td colspan="10" class="empty">暂无数据, 点击「运行演示数据」或等待数据获取层接入</td></tr>'}</tbody>
     </table>
   </div>
   <div class="panel" id="rel-detail">
@@ -886,16 +984,25 @@ async function renderRelations(container) {
     } catch (e) { alert("运行失败: " + e.message); }
   });
 
-  container.querySelector("#rel-model-filter").addEventListener("change", async ev => {
-    const m = ev.target.value;
-    const url = m ? `${API}/relations/edges?limit=500&model=${encodeURIComponent(m)}` : `${API}/relations/edges?limit=500`;
+  async function applyRelFilter() {
+    const m = container.querySelector("#rel-model-filter").value;
+    const rel = container.querySelector("#rel-layer-filter").value;
+    const params = new URLSearchParams({ limit: "500" });
+    if (m) params.set("model", m);
+    if (rel) params.set("rel", rel);
+    const url = `${API}/relations/edges?${params.toString()}`;
     try {
       const data = await getJSON(url);
       const body = document.getElementById("rel-edges-body");
-      body.innerHTML = (data.items || []).map(edgeRow).join("") || '<tr><td colspan="9" class="empty">该模型暂无数据</td></tr>';
+      const tip = rel === "intra_layer" ? "层内(同功能域分支内联动)"
+                : rel === "inter_layer" ? "层间(跨功能域传导)" : "该筛选暂无数据";
+      body.innerHTML = (data.items || []).map(edgeRow).join("") || `<tr><td colspan="10" class="empty">${tip}</td></tr>`;
       bindEdgeLinks(container);
     } catch (e) { alert("筛选失败: " + e.message); }
-  });
+  }
+
+  container.querySelector("#rel-model-filter").addEventListener("change", applyRelFilter);
+  container.querySelector("#rel-layer-filter").addEventListener("change", applyRelFilter);
 
   bindEdgeLinks(container);
   drawNetwork(document.getElementById("rel-network-canvas"), net, labels);
