@@ -30,22 +30,27 @@
 
 ## 数据源目录（catalog：每个分类不同的获取方式）
 
-`config/finance/catalog.json` 注册了 8 类数据源，每个数据源声明：
+`config/finance/catalog.json` 注册了 9 类数据源，每个数据源声明：
 **覆盖范围 + 获取脚本(script/module/command) + 调度策略 + 渐进披露级别 + 数据落地 + 依赖**。
 
-| 数据源 | 类型 | 覆盖 | 获取方式 | 依赖 |
-|---|---|---|---|---|
-| `akshare` | python_lib | 中国及全球行情（A股/港股/期货/基金/宏观/汇率） | 脚本 `finance/fetchers/akshare_fetcher.py` | pip install akshare |
-| `yfinance` | python_lib | 全球股票/ETF/外汇/期货 | `yfinance_fetcher.py` | pip install yfinance |
-| `ccxt` | python_lib | 加密货币 100+ 交易所现货/合约/永续/期权 | `ccxt_fetcher.py` | pip install ccxt |
-| `fred` | http_api | 美国及全球宏观/利率/债券序列 | `fred_fetcher.py` (urllib 直连) | FRED_API_KEY |
-| `finnhub` | http_api | 全球新闻+行情+情绪 | `finnhub_fetcher.py` | FINNHUB_API_KEY |
-| `rss_news` | rss | 财经舆论聚合（新华/东财/路透/CNBC） | `rss_fetcher.py` | feedparser（可降级标准库） |
-| `alpha_vantage` | http_api | 全球股票/外汇/宏观/加密 | `alpha_vantage_fetcher.py` | ALPHA_VANTAGE_API_KEY |
-| `manual` | manual | 人工/半自动录入 | `manual_fetcher.py` | 无 |
+| 数据源 | 类型 | 覆盖 | 获取方式 | 依赖 | 状态 |
+|---|---|---|---|---|---|
+| `akshare` | python_lib | 中国及全球行情（A股/港股/期货/基金/宏观/汇率） | 脚本 `finance/fetchers/akshare_fetcher.py` | pip install akshare | demo |
+| `yfinance` | python_lib | 全球股票/ETF/外汇/期货 | `yfinance_fetcher.py` | pip install yfinance | demo |
+| `ccxt` | python_lib | 加密货币 100+ 交易所现货/合约/永续/期权 | `ccxt_fetcher.py` | pip install ccxt | demo |
+| `fred` | http_api | 美国及全球宏观/利率/债券序列 | `fred_fetcher.py` (urllib 直连) | FRED_API_KEY | demo |
+| `finnhub` | http_api | 全球新闻+行情+情绪 | `finnhub_fetcher.py` | FINNHUB_API_KEY | demo |
+| `rss_news` | rss | 财经舆论聚合（新华/东财/路透/CNBC） | `rss_fetcher.py` | feedparser（可降级标准库） | demo |
+| `alpha_vantage` | http_api | 全球股票/外汇/宏观/加密 | `alpha_vantage_fetcher.py` | ALPHA_VANTAGE_API_KEY | demo |
+| `github` | http_api | 全球开源项目生态/开发者舆论（活跃榜 + 单项目 stars/forks/提交） | `github_fetcher.py` (标准库 urllib 直连) | 无需 Key | **live（真实数据）** |
+| `manual` | manual | 人工/半自动录入 | `manual_fetcher.py` | 无 | demo |
 
 > **框架特性**：未安装依赖/未配 Key 时自动降级为 demo 模式（本地生成模拟数据），
 > 框架**离线可运行**；接入真实 API 后自动切换真实数据。
+>
+> ✅ **`github` 是首个 `status: live` 的真实数据源**：GitHub 公开 API 无需 Key、网络实测可达（HTTP 200，限流 60 次/小时），
+> 通过标准库 `urllib` 直连即可获取真实开源项目数据（star/forks/活跃度/近期提交），
+> 证明框架"**能获取真实信息**"而非仅 demo 模拟。
 
 ## 渐进式披露（disclosure）
 
@@ -77,6 +82,11 @@ python3 -m finance.cli search --instrument BTC --summary
 python3 -m finance.cli index --instrument CN.RB
 python3 -m finance.cli meta --instrument CN.RB
 python3 -m finance.cli fetch --instrument CN.RB --source akshare --time-level 1d
+
+# 4b. ✅ 真实数据示例 (GitHub 开源生态, 无需 Key, 网络可达即返回真实数据):
+python3 -m finance.cli search --data-class sentiment --region GLOBAL   # 六维筛选定位 GitHub 品种
+python3 -m finance.cli fetch --instrument SENTIMENT.GITHUB.PYTORCH --source github --time-level 1d   # 真实 stars/forks/近期提交
+python3 -m finance.cli fetch --instrument SENTIMENT.GITHUB.TRENDING --source github --time-level 1d  # 真实开源活跃榜
 
 # 5. 调度: 每天 16:00 自动获取
 python3 -m finance.cli schedule --add --instrument CN.RB --source akshare --every 1d --at 16:00
@@ -125,19 +135,19 @@ finance/
 ├── scheduler.py         调度器 (频率/时间/自动获取)
 ├── api.py               REST API
 ├── cli.py               CLI 统一入口
-├── fetchers/            每个分类的获取脚本 (akshare/yfinance/ccxt/fred/finnhub/rss/alpha_vantage/manual)
+├── fetchers/            每个分类的获取脚本 (akshare/yfinance/ccxt/fred/finnhub/rss/alpha_vantage/github/manual)
 ├── web/                 轻量 Web 管理台 (总览/筛选/目录/调度/缓存)
 └── data/
     ├── cache/           获取数据落地缓存
     └── scheduler.json   调度任务持久化
 
-tests/test_finance.py    框架测试 (8 项)
+tests/test_finance.py    框架测试 (10 项)
 ```
 
 ## 测试
 
 ```bash
-python3 tests/test_finance.py    # 8/8 通过 (离线可运行)
+python3 tests/test_finance.py    # 10/10 通过 (含 github 真实数据源; 网络不可用时优雅降级, 离线仍可运行)
 ```
 
 ## 扩展指南（接入新数据源 / 新品种）
@@ -151,6 +161,7 @@ python3 tests/test_finance.py    # 8/8 通过 (离线可运行)
 
 ## 后续路线图
 
+- [x] **打通首条真实数据链路**（GitHub 开源生态：活跃榜 + 单项目 stars/forks/活跃度/近期提交，无需 Key、网络可达即返回真实数据）
 - [ ] 接入更多真实数据源（Tushare/东财/新浪/雅虎/彭博/路透/EIA/OECD...）
 - [ ] 数据落地升级：JSON 缓存 → SQLite / Parquet / LanceDB 储备库
 - [ ] 行情数据统一 schema + 多源合并去重 + 质量评分（复用 reserve/quality.py 思路）

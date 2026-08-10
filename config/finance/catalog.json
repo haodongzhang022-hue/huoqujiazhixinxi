@@ -182,6 +182,31 @@
       "requires": {"env": ["ALPHA_VANTAGE_API_KEY"], "note": "免费注册 https://www.alphavantage.co/support/#api-key"}
     },
     {
+      "id": "github",
+      "name": "GitHub(开源项目生态/开发者舆论)",
+      "name_en": "GitHub Open Source Ecosystem",
+      "type": "http_api",
+      "script": "finance/fetchers/github_fetcher.py",
+      "module": "finance.fetchers.github_fetcher",
+      "command": "python -m finance.fetchers.github_fetcher --instrument SENTIMENT.GITHUB.TRENDING --time-level 1d",
+      "coverage": {
+        "data_classes": ["sentiment"],
+        "regions": ["GLOBAL"],
+        "exchanges": ["GITHUB"],
+        "time_levels": ["1d", "1w", "1M"],
+        "trade_types": ["indices"]
+      },
+      "fetchers": [
+        {"name": "trending", "desc": "全球开源项目活跃榜(开发者关注热点)", "inputs": [], "output": "trending"},
+        {"name": "project", "desc": "单个开源项目实时数据(stars/forks/活跃度/近期提交)", "inputs": ["instrument"], "output": "project"}
+      ],
+      "schedule": {"default_frequency": "1d", "default_cron": "0 8 * * *"},
+      "disclosure": {"index": true, "meta": true, "full": true},
+      "storage": {"kind": "file", "path": "finance/data/cache/github/{instrument}_{time_level}.json"},
+      "status": "live",
+      "requires": {"note": "无需 Key, GitHub 公开 API 默认限流 60 次/小时"}
+    },
+    {
       "id": "manual",
       "name": "人工/半自动采集",
       "name_en": "Manual Ingestion",

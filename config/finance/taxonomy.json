@@ -48,7 +48,7 @@
       "name": "舆论/新闻情绪",
       "name_en": "News & Sentiment",
       "sub_types": ["news", "social", "earnings_call", "official_announcement", "fear_greed"],
-      "typical_exchanges": ["REUTERS", "BLOOMBERG", "CNBC", "CLS", "XINHUA", "EASTMONEY", "FINNHUB", "REDDIT", "TWITTER"],
+      "typical_exchanges": ["REUTERS", "BLOOMBERG", "CNBC", "CLS", "XINHUA", "EASTMONEY", "FINNHUB", "REDDIT", "TWITTER", "GITHUB"],
       "notes": "财经新闻/社交媒体/公告/情绪指数"
     },
     "bond": {
@@ -142,7 +142,8 @@
     "BLS":     {"id": "BLS",     "name": "美国劳工统计局", "region": "US", "data_classes": ["macro"], "type": "authority"},
     "EUROSTAT":{"id": "EUROSTAT","name": "欧盟统计局", "region": "EU", "data_classes": ["macro"], "type": "authority"},
     "IMF":     {"id": "IMF",     "name": "国际货币基金组织", "region": "GLOBAL", "data_classes": ["macro"], "type": "authority"},
-    "FRED":    {"id": "FRED",    "name": "圣路易斯联储 FRED", "region": "US", "data_classes": ["macro", "bond"], "type": "authority"}
+    "FRED":    {"id": "FRED",    "name": "圣路易斯联储 FRED", "region": "US", "data_classes": ["macro", "bond"], "type": "authority"},
+    "GITHUB":  {"id": "GITHUB",  "name": "GitHub 开源项目生态", "region": "GLOBAL", "data_classes": ["sentiment"], "type": "community"}
   },
   "time_levels": {
     "tick":       {"id": "tick",       "name": "逐笔/Tick", "seconds": 0},
@@ -201,6 +202,10 @@
     "MACRO.US.UNRATE":{"id": "MACRO.US.UNRATE","name": "美国失业率", "symbol": "UNRATE", "exchange": "BLS", "data_class": "macro", "trade_types": ["indices"], "currency": "USD"},
     "SENTIMENT.GLOBAL.NEWS":{"id": "SENTIMENT.GLOBAL.NEWS","name": "全球财经新闻", "symbol": "FINNHUB-NEWS", "exchange": "FINNHUB", "data_class": "sentiment", "trade_types": ["indices"], "currency": "USD"},
     "SENTIMENT.CN.NEWS":{"id": "SENTIMENT.CN.NEWS","name": "中文财经新闻", "symbol": "EASTMONEY-NEWS", "exchange": "EASTMONEY", "data_class": "sentiment", "trade_types": ["indices"], "currency": "CNY"},
-    "SENTIMENT.CRYPTO.FEAR":{"id": "SENTIMENT.CRYPTO.FEAR","name": "加密恐惧贪婪指数", "symbol": "FEAR-GREED", "exchange": "ALTERNATIVE", "data_class": "sentiment", "trade_types": ["indices"], "currency": "USD"}
+    "SENTIMENT.CRYPTO.FEAR":{"id": "SENTIMENT.CRYPTO.FEAR","name": "加密恐惧贪婪指数", "symbol": "FEAR-GREED", "exchange": "ALTERNATIVE", "data_class": "sentiment", "trade_types": ["indices"], "currency": "USD"},
+    "SENTIMENT.GITHUB.TRENDING":{"id": "SENTIMENT.GITHUB.TRENDING","name": "全球开源项目活跃榜", "symbol": "GITHUB-TRENDING", "exchange": "GITHUB", "data_class": "sentiment", "trade_types": ["indices"], "currency": "USD"},
+    "SENTIMENT.GITHUB.PYTORCH":{"id": "SENTIMENT.GITHUB.PYTORCH","name": "PyTorch 开源项目", "symbol": "pytorch/pytorch", "exchange": "GITHUB", "data_class": "sentiment", "trade_types": ["indices"], "currency": "USD"},
+    "SENTIMENT.GITHUB.TENSORFLOW":{"id": "SENTIMENT.GITHUB.TENSORFLOW","name": "TensorFlow 开源项目", "symbol": "tensorflow/tensorflow", "exchange": "GITHUB", "data_class": "sentiment", "trade_types": ["indices"], "currency": "USD"},
+    "SENTIMENT.GITHUB.LANGCHAIN":{"id": "SENTIMENT.GITHUB.LANGCHAIN","name": "LangChain 开源项目", "symbol": "langchain-ai/langchain", "exchange": "GITHUB", "data_class": "sentiment", "trade_types": ["indices"], "currency": "USD"}
   }
 }
