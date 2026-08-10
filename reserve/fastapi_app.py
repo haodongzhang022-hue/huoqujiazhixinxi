@@ -242,6 +242,75 @@ def api_sync_source(source: str, body: SyncBody | None = None):
     )
 
 
+# ---------------- 渠道分类漏斗: 分类→渠道→子渠道/单渠道叶节点 + 2级汇总 ----------------
+
+
+def _all_items(date: str | None = None) -> list[dict]:
+    """读取当前数据获取层的全部条目 (供渠道漏斗汇总/过滤)。"""
+    try:
+        from reserve.store import ReserveStore
+        store = ReserveStore()
+        rows = store.items_query(date=date, limit=1000)
+        if not rows:
+            # 无 LanceDB 数据时回退到多源缓存
+            from reserve.sources import digest
+            d = digest()
+            out = []
+            for cat in d.get("categories", []):
+                out.extend(cat.get("items", []))
+            return out
+        return rows
+    except Exception as e:
+        print(f"[channels] 读取 items 失败: {e}")
+        return []
+
+
+@app.get("/api/v1/channels", response_model=None, tags=["渠道分类漏斗"])
+def api_channels(date: Optional[str] = None):
+    """渠道分类漏斗: 返回分层定义 + 渠道树 (2 级汇总 + 单渠道叶节点)。
+
+    分级整合视图: 分类 → 渠道 → 子渠道 → 条目数。
+    """
+    from reserve.channels import channel_tree, channel_layers
+    items = _all_items(date)
+    tree = channel_tree(items)
+    tree["layers"] = channel_layers()
+    return _clean(tree)
+
+
+@app.get("/api/v1/channels/aggregate", response_model=None, tags=["渠道分类漏斗"])
+def api_channels_aggregate(
+    level: int = Query(1, ge=0, le=2, description="0=分类汇总 / 1=渠道汇总 / 2=子渠道汇总"),
+    date: Optional[str] = None,
+):
+    """2 级汇总: 按指定层级聚合条目数。"""
+    from reserve.channels import aggregate
+    items = _all_items(date)
+    return _clean({"level": level, "date": date, "groups": aggregate(items, level=level)})
+
+
+@app.get("/api/v1/channels/items", response_model=None, tags=["渠道分类漏斗"])
+def api_channels_items(
+    path: str = Query(..., description="渠道路径, 如 repos / papers.arxiv / papers.arxiv.cs.AI"),
+    date: Optional[str] = None,
+    limit: int = Query(200, ge=1, le=1000),
+):
+    """按渠道路径取数据 (清洗/消费): 匹配到单渠道叶节点或某级汇总。"""
+    from reserve.channels import filter_items
+    items = _all_items(date)
+    rows = filter_items(items, path)
+    return _clean({"path": path, "count": len(rows), "items": rows[:limit]})
+
+
+@app.get("/api/v1/channels/match", response_model=None, tags=["渠道分类漏斗"])
+def api_channels_match(path: str = Query(..., description="要匹配的渠道路径")):
+    """把输入渠道路径规范化/匹配为统一 Channel (含分类推断)。"""
+    from reserve.channels import match_channel
+    ch = match_channel(path)
+    return _clean({"input": path, "channel": ch.to_dict(), "path": str(ch), "short": ch.short,
+                   "is_leaf": ch.is_leaf(), "active_layers": ch.active_layers()})
+
+
 # ---------------- 二次整理层: 金融各市场两两关联 (ISSUE #7) ----------------
 
 

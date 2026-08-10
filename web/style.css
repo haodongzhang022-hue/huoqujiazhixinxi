@@ -354,3 +354,14 @@ tr:hover td { background: rgba(56, 189, 248, 0.05); }
 .rel-metrics { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0; }
 .rel-metrics .stat-card { min-width: 110px; }
 .rel-iter { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--yellow); margin-top: 8px; }
+
+/* ---------------- 渠道分类漏斗 (channels) ---------------- */
+.chan-cat td { border-top: 2px solid var(--border); font-weight: 700; }
+.chan-cat .count, .chan-src .count, .chan-leaf .count { font-weight: 700; color: var(--accent); }
+.chan-src td { color: var(--text); }
+.chan-leaf td { color: var(--muted); font-size: 13px; }
+.indent1 { padding-left: 24px; }
+.indent2 { padding-left: 48px; }
+.chan-leaf code { color: var(--green); }
+#chan-result .panel { border: 1px dashed var(--border); }
+#chan-path.select { padding: 8px 12px; background: #0b1220; color: var(--text); border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }

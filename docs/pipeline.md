@@ -23,6 +23,8 @@ LanceDB 储备库 (repo_reserve 表: 功能索引 + 条件判断 + embedding)
         ├── reserve/relations  二次整理层 (ISSUE #7): 金融各市场/品种两两关联量化 + 预测对比
         │     (dims 维度 / frame 矩阵 / engine 评估引擎 / compare 预测验证 / store / demo)
         └── reserve/api.py     REST API (/api/v1/reserve/* + /api/v1/needs + /api/v1/quality + /api/v1/health|heal + /api/v1/dashboard/*) + Web 管理页面 (web/)
+        └── reserve/channels.py 渠道分类漏斗: 分类→渠道→子渠道/单渠道叶节点 + 2级汇总 + 统一 channel_path 格式
+              (供数据清洗与上层关联分析消费; API: /api/v1/channels/* 与 Web「渠道漏斗」页签)
 ```
 
 ## 快速开始
@@ -110,6 +112,25 @@ curl http://127.0.0.1:8000/api/v1/health
 
 > 接入方式：实现对应 fetch 并归一化为统一 Item（契约 schema_version=1.0, 见 reserve/schemas.py），
 > 即可自动汇入 `/api/v1/feed` 信息流与每日聚合。`POST /api/v1/sync/{source}` 为预留的单源同步入口。
+
+### 6.5 渠道分类漏斗 (分类→渠道→子渠道/单渠道叶节点 + 2级汇总)
+
+> 把数据获取层的渠道体系组织成<b>多级漏斗</b>：从分类(大类)下钻到单渠道叶节点，
+> 提供 2 级汇总与统一 `channel_path` 格式，方便数据清洗与上层(关联分析)消费。
+
+```bash
+# 渠道树 (2 级汇总 + 单渠道叶节点, 分级整合)
+curl "http://127.0.0.1:8000/api/v1/channels"
+# 2 级汇总: level=0 按分类 / level=1 按渠道 / level=2 按子渠道
+curl "http://127.0.0.1:8000/api/v1/channels/aggregate?level=1"
+# 按渠道路径取数据 (清洗/消费): 匹配单渠道叶节点或某级汇总
+curl "http://127.0.0.1:8000/api/v1/channels/items?path=papers.arxiv.cs.AI"
+# 规范化/匹配渠道路径 (含分类推断, 如 arxiv -> papers.arxiv)
+curl "http://127.0.0.1:8000/api/v1/channels/match?path=arxiv"
+```
+
+渠道路径格式: `category.source.subchannel`，如 `repos.cnb.ai-agent` / `papers.arxiv.cs.AI`。
+Web 管理台「渠道漏斗」页签可图形化查看渠道树、2 级汇总，并输入渠道路径查询单渠道数据。
 
 ### 7. REST API (兼容旧版 http.server)
 

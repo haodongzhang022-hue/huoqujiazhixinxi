@@ -577,6 +577,104 @@ async function syncSource(id) {
   }
 }
 
+/* ---------------- 渠道分类漏斗: 分类→渠道→子渠道/单渠道叶节点 + 2级汇总 ---------------- */
+
+function renderChannelTree(tree) {
+  if (!tree || !tree.tree || Object.keys(tree.tree).length === 0) {
+    return `<div class="empty">暂无渠道数据。请先运行数据获取管道采集数据。</div>`;
+  }
+  const layers = (tree.layers || []).map(l => `${esc(l.label)}`).join(" → ");
+  let rows = "";
+  const top = tree.tree;
+  for (const [cat, cnode] of Object.entries(top)) {
+    const cm = cnode._meta || { label: cat, count: 0 };
+    rows += `<tr class="chan-cat">
+        <td><b>${esc(cm.label)}</b> <span class="muted">(${esc(cat)})</span></td>
+        <td class="count">${cm.count}</td>
+        <td colspan="2"></td>
+      </tr>`;
+    for (const [src, snode] of Object.entries(cnode)) {
+      if (src === "_meta") continue;
+      const sm = snode._meta || { label: src, count: 0 };
+      rows += `<tr class="chan-src">
+          <td class="indent1">└ <b>${esc(sm.label)}</b> <span class="muted">(${esc(src)})</span></td>
+          <td class="count">${sm.count}</td>
+          <td colspan="2"></td>
+        </tr>`;
+      for (const [sub, lnode] of Object.entries(snode)) {
+        if (sub === "_meta") continue;
+        const lm = lnode._meta || { count: 0 };
+        rows += `<tr class="chan-leaf">
+            <td class="indent2">├ <span class="muted">子渠道:</span> <b>${esc(sub)}</b></td>
+            <td class="count">${lm.count}</td>
+            <td class="desc">${esc(src) + "." + esc(sub)}</td>
+            <td class="desc"><code>${esc(cat)}.${esc(src)}.${esc(sub)}</code></td>
+          </tr>`;
+    }
+    }
+  }
+  return `<table>
+    <thead><tr><th>分类 → 渠道 → 子渠道</th><th>条目数</th><th>渠道路径</th><th>统一 channel_path</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <p class="muted" style="margin-top:8px">层级: ${layers} · 总计 ${tree.total_items} 条</p>`;
+}
+
+async function renderChannels(container) {
+  const [tree, agg0, agg1] = await Promise.all([
+    getJSON(`${API}/channels`),
+    getJSON(`${API}/channels/aggregate?level=0`),
+    getJSON(`${API}/channels/aggregate?level=1`),
+  ]);
+  const g0 = (agg0.groups || []).map(g => `<span class="badge">${esc(g.label)} <b>${g.count}</b></span>`).join(" ") || "无";
+  const g1 = (agg1.groups || []).map(g => `<span class="badge">${esc(g.label)} <b>${g.count}</b></span>`).join(" ") || "无";
+
+  container.innerHTML = `
+    <div class="panel">
+      <h2>🔽 渠道分类漏斗 (分类 → 渠道 → 子渠道/单渠道叶节点)</h2>
+      <p class="muted">
+        将数据获取层的渠道体系组织为<b>多级漏斗</b>：从分类(大类)下钻到单渠道叶节点，
+        提供 <b>2 级汇总</b> 与 <b>统一 channel_path</b> 格式，方便数据清洗与上层(关联分析)消费。
+      </p>
+      <div class="rel-toolbar">
+        <label class="muted">按渠道路径取数据:</label>
+        <input id="chan-path" class="select" style="width:260px" placeholder="如 repos / papers.arxiv / papers.arxiv.cs.AI" />
+        <button class="btn" onclick="queryChannel()">🔍 查询单渠道</button>
+        <button class="btn secondary" onclick="refresh('channels')">🔄 刷新</button>
+      </div>
+      <div id="chan-result" style="margin-top:12px"></div>
+      <div style="margin-top:16px">
+        <h3>第 1 级汇总 · 按分类</h3>
+        <div style="margin:6px 0">${g0}</div>
+        <h3>第 2 级汇总 · 按渠道</h3>
+        <div style="margin:6px 0">${g1}</div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>🗂 渠道树 (分级整合)</h2>
+      ${renderChannelTree(tree)}
+    </div>`;
+}
+
+async function queryChannel() {
+  const path = document.getElementById("chan-path").value.trim();
+  const box = document.getElementById("chan-result");
+  if (!path) { box.innerHTML = `<div class="empty">请输入渠道路径</div>`; return; }
+  try {
+    const match = await getJSON(`${API}/channels/match?path=${encodeURIComponent(path)}`);
+    const data = await getJSON(`${API}/channels/items?path=${encodeURIComponent(path)}&limit=50`);
+    const items = (data.items || []).map((it, i) => `
+      <li><b>${esc(it.title)}</b> <span class="muted">${esc(it.channel_path || "")}</span></li>`).join("") || "无数据";
+    box.innerHTML = `
+      <div class="panel" style="margin:0">
+        <h3>匹配结果: <code>${esc(path)}</code> → <code>${esc(match.path)}</code> <span class="badge">${match.is_leaf ? "单渠道叶节点" : "汇总层"}</span></h3>
+        <p class="muted">${esc(match.short)} · 共 ${data.count} 条</p>
+        <ol style="max-height:300px;overflow:auto">${items}</ol>
+      </div>`;
+  } catch (e) {
+    box.innerHTML = `<div class="empty">❌ ${esc(e.message)}</div>`;
+  }
+}
+
 /* ---------------- 自愈中心 ---------------- */
 async function renderHeal(container) {
   let health = null;
@@ -1099,6 +1197,7 @@ const VIEWS = {
   needs: renderNeeds,
   review: renderReview,
   sources: renderSources,
+  channels: renderChannels,
   relations: renderRelations,
   heal: renderHeal,
 };
