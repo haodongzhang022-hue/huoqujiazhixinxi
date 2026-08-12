@@ -11,9 +11,9 @@ main:
           image: python:3.11
           script: |
             set -e
-            pip install -q -r pipeline/requirements.txt pytest
+            pip install -q -r pipeline/requirements.txt pytest httpx2
             pip install -q akshare yfinance ccxt finnhub-python fredapi alpha_vantage || echo "optional fetcher deps unavailable, will fall back to demo"
-            python3 -m pytest tests/test_finance.py tests/test_reserve.py tests/test_lance.py tests/test_relations.py tests/test_channels.py -q
+            python3 -m pytest tests/ -q --ignore=tests/test_relations_functional.py
             python3 tests/test_relations_functional.py   # 功能校验: 端到端跑功能 + 对结果做业务断言
 
   pull_request.mergeable:
