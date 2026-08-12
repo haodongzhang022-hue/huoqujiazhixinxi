@@ -5,6 +5,16 @@ main:
         - name: commit lint
           image: cnbcool/commitlint
 
+    - name: functional-tests
+      stages:
+        - name: install deps & run all functional tests
+          image: python:3.11
+          script: |
+            set -e
+            pip install -q -r pipeline/requirements.txt pytest
+            pip install -q akshare yfinance ccxt finnhub-python fredapi alpha_vantage || echo "optional fetcher deps unavailable, will fall back to demo"
+            python3 -m pytest tests/test_finance.py tests/test_reserve.py tests/test_lance.py -q
+
   pull_request.mergeable:
     - name: auto-merge
       stages:
@@ -12,4 +22,4 @@ main:
           type: git:auto-merge
           options:
             mergeType: squash
-            removeSourceBranch: true          
+            removeSourceBranch: true

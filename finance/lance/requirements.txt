@@ -1,0 +1,15 @@
+# finance/lance —— LanceDB 统一数据管理 (渠道/列/参数/任务/数据/挖掘) 依赖
+# 已随根 requirements 或单独安装:
+lancedb>=0.30
+pyarrow>=14.0
+pandas>=2.0
+numpy>=1.24
+
+# 可选: 各渠道真实数据获取 (未安装时自动降级 demo 数据)
+# akshare>=1.12
+# yfinance>=0.2
+# ccxt>=4.0
+# feedparser>=6.0
+
+# 可选: 完整 cron 解析 (未安装时使用简化调度)
+# croniter>=2.0

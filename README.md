@@ -3,6 +3,17 @@
 ![badge](/-/badge/git/latest/ci/pipeline-as-code)
 ![badge](/-/badge/git/latest/ci/status/auto_merge)
 
+> 📌 **本项目实际能力（huoqujiazhixinxi 获取价值信息）**
+>
+> - 🌐 **全球金融数据超索引框架**（Issue #6 专项）：六维分类（数据类别×国家×交易所×时间级别×品种×交易类型）→ 筛选器 → 数据源脚本索引 → 渐进披露 → 触发/定时获取
+>   - 文档：**[docs/finance-framework.md](docs/finance-framework.md)**、**[docs/finance-lance.md](docs/finance-lance.md)**
+>   - 快速体验：`python3 -m finance.cli search --data-class futures --region CN`、`python3 -m finance.cli fetch --instrument CRYPTO.BTC --source ccxt`、`python3 -m finance.api --port 8100`
+>   - 🗄️ **LanceDB 统一数据管理**（Issue #6 二期）：渠道/列定义/参数/任务/数据/日志/挖掘候选 七表统一入库，爬虫解耦为「通用模板 + 分渠道定义」；`python3 -m finance.cli lance init` / `lance fetch` / `lance tasks` / `lance discovery`
+> - 📦 **开源项目信息获取与筛选管道**：GitHub 每日新热项目采集 → 归一化 → 三分类 → LanceDB 储备库 → 条件触发 → 质量评估 → Web 管理台
+>   - 文档：**[docs/pipeline.md](docs/pipeline.md)**
+>
+> 测试：`python3 tests/test_finance.py`（金融框架 8 项）+ `python3 tests/test_reserve.py`（储备库 34 项）
+
 ## NPC
 
 1. [Claude Code](https://cnb.cool/npc/claude-code)
