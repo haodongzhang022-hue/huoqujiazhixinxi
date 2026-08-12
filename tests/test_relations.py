@@ -183,6 +183,26 @@ def test_models_all_run():
         assert 0.0 <= res.get("strength", 0) <= 1.0
 
 
+def test_lead_lag_negative_lag_no_crash():
+    """回归: lead_lag 在最佳 lag 为负 (B 领先 A) 时不应崩溃。
+
+    修复前 _lagged 会把负 lag 直接传入导致 dates[pi] 越界 IndexError;
+    _stability 同样对负 lag 交换 A/B 再算。
+    """
+    a, b = _two_series(beta=0.8, lag=2)
+    # B 领先 A 的场景: B→A 应得到负 lag 且不抛异常
+    res = evaluate_pair(b, a, model="lead_lag", max_lag=6)
+    assert res["model"] == "lead_lag"
+    assert 0.0 <= res["strength"] <= 1.0
+    assert "stability" in res and 0.0 <= res["stability"] <= 1.0
+    # 演示面板跨维度评估也不应因负 lag 崩溃
+    from reserve.relations.demo import build_panel
+    from reserve.relations.engine import evaluate_all
+    panel = build_panel(days=120)
+    results = evaluate_all(panel, model="lead_lag", max_lag=5)
+    assert len(results) == 56
+
+
 def test_insufficient_data():
     res = evaluate_pair({"2026-01-01": 1.0, "2026-01-02": 1.1}, {"2026-01-01": 5.0, "2026-01-02": 5.2},
                         model="linear")

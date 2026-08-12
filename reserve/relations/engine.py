@@ -168,18 +168,26 @@ def lead_lag(series_a: dict, series_b: dict, max_lag: int = 10) -> dict:
         if abs(c) > abs(best["corr"]):
             best = {"lag": lag, "corr": c}
     corr = best["corr"]
+    # 负 lag 表示 B 领先 A: 样本量从 _lagged(B, A, |lag|) 取得 (避免把负 lag 传入 _lagged 导致越界)
+    sample = _lagged(series_a, series_b, best["lag"]) if best["lag"] >= 0 \
+        else _lagged(series_b, series_a, -best["lag"])
     return {
         "model": "lead_lag",
         "lag": best["lag"],
         "corr": corr,
         "sign": 1 if corr >= 0 else -1,
         "strength": abs(corr),
-        "sample_size": max(3, len(_lagged(series_a, series_b, best["lag"]))),
+        "sample_size": max(3, len(sample)),
     }
 
 
 def _stability(series_a: dict, series_b: dict, lag: int = 1, window: int = 10) -> float:
-    """滚动窗口相关系数的稳定性 (1 - 变异系数, 越高越稳定)。"""
+    """滚动窗口相关系数的稳定性 (1 - 变异系数, 越高越稳定)。
+
+    负 lag 表示 B 领先 A, 与 _lagged 约定一致: 交换 A/B 并用 |lag| 计算。
+    """
+    if lag < 0:
+        series_a, series_b, lag = series_b, series_a, -lag
     dates = sorted(set(series_a) & set(series_b))
     if len(dates) < window + 2:
         return 0.0
